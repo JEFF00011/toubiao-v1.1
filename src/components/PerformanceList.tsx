@@ -51,6 +51,7 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
   const [searchContractNumber, setSearchContractNumber] = useState('');
   const [searchProjectName, setSearchProjectName] = useState('');
   const [searchClientName, setSearchClientName] = useState('');
+  const [searchAmountMin, setSearchAmountMin] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [jumpPage, setJumpPage] = useState('');
@@ -67,6 +68,7 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
     setSearchContractNumber('');
     setSearchProjectName('');
     setSearchClientName('');
+    setSearchAmountMin('');
     setCurrentPage(1);
   };
 
@@ -217,7 +219,15 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
     const matchesContract = !searchContractNumber || item.contractNumber.toLowerCase().includes(searchContractNumber.toLowerCase());
     const matchesProject = !searchProjectName || item.projectName.toLowerCase().includes(searchProjectName.toLowerCase());
     const matchesClient = !searchClientName || item.clientName.toLowerCase().includes(searchClientName.toLowerCase());
-    return matchesContract && matchesProject && matchesClient;
+
+    let matchesAmount = true;
+    if (searchAmountMin) {
+      const minAmount = parseFloat(searchAmountMin);
+      const itemAmount = parseFloat(item.projectAmount?.replace(/[^\d.]/g, '') || '0');
+      matchesAmount = itemAmount > minAmount;
+    }
+
+    return matchesContract && matchesProject && matchesClient && matchesAmount;
   });
 
   const paginatedItems = () => {
@@ -596,7 +606,7 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
           </div>
 
           <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               合同编号
               <input
                 type="text"
@@ -620,6 +630,14 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
                 value={searchClientName}
                 onChange={(e) => setSearchClientName(e.target.value)}
                 className="w-48 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+              />
+              金额大于
+              <input
+                type="number"
+                placeholder="请输入金额"
+                value={searchAmountMin}
+                onChange={(e) => setSearchAmountMin(e.target.value)}
+                className="w-40 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
               />
             </div>
 

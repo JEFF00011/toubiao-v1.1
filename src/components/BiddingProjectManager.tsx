@@ -19,11 +19,42 @@ interface DocumentDirectoryItem {
 
 interface ParsedData {
   basicInfo: {
-    tenderer: string;
-    agent: string;
-    projectInfo: string;
-    keyTimeline: string;
-    bidBond: string;
+    projectInfo: {
+      projectName: string;
+      projectNumber: string;
+      packageName: string;
+      packageNumber: string;
+      lotName: string;
+      lotNumber: string;
+      projectOverview: string;
+      budgetAmount: string;
+      allowConsortium: string;
+    };
+    tenderer: {
+      name: string;
+      contact: string;
+      email: string;
+      address: string;
+      zipCode: string;
+    };
+    agent: {
+      name: string;
+      contact: string;
+      email: string;
+      address: string;
+      zipCode: string;
+    };
+    keyTimeline: {
+      bidDeadline: string;
+      submissionMethod: string;
+      openingTime: string;
+      openingLocation: string;
+    };
+    bidBond: {
+      submissionMethod: string;
+      amount: string;
+      refundPolicy: string;
+    };
   };
   qualificationRequirements: string;
   evaluationCriteria: {
@@ -53,7 +84,7 @@ interface BiddingProjectManagerProps {
 }
 
 const BiddingProjectManager: React.FC<BiddingProjectManagerProps> = ({ canEdit = true, canDelete = true }) => {
-  const STORAGE_KEY = 'bidding_projects_v3';
+  const STORAGE_KEY = 'bidding_projects_v4';
 
   const [projects, setProjects] = useState<BiddingProject[]>(() => {
     const savedData = localStorage.getItem(STORAGE_KEY);
@@ -81,13 +112,44 @@ const BiddingProjectManager: React.FC<BiddingProjectManagerProps> = ({ canEdit =
         parseProgress: 100,
         parsedData: {
           basicInfo: {
-            tenderer: '某某科技园管理委员会',
-            agent: '建信招标代理有限公司',
-            projectInfo: '办公楼智能化系统集成建设',
-            keyTimeline: '投标截止：2025-10-28 09:30',
-            bidBond: '80万元'
+            projectInfo: {
+              projectName: '办公楼智能化系统集成项目',
+              projectNumber: 'ZFCG-2025-088',
+              packageName: '智能化系统集成服务包',
+              packageNumber: 'FB-01',
+              lotName: '第一标段',
+              lotNumber: 'BD-01',
+              projectOverview: '本项目旨在对办公楼进行智能化系统集成改造，包括楼宇自控系统、安防监控系统、综合布线系统、计算机网络系统、会议系统等多个子系统的设计、采购、安装、调试及培训。项目建设内容涵盖智能照明控制、空调新风控制、电梯监控、门禁系统、视频监控、周界报警、停车管理等功能模块。预计建设周期3个月，分为方案设计、设备采购、现场施工、系统调试、竣工验收五个阶段。',
+              budgetAmount: '人民币 800 万元',
+              allowConsortium: '本项目不接受联合体投标'
+            },
+            tenderer: {
+              name: '某某科技园管理委员会',
+              contact: '王主任 / 0755-12345678',
+              email: 'wangzr@techpark.gov.cn',
+              address: '深圳市南山区高新技术产业园区科技路100号',
+              zipCode: '518057'
+            },
+            agent: {
+              name: '深圳建信招标代理有限公司',
+              contact: '李经理 / 0755-87654321',
+              email: 'lijl@jxbidding.com',
+              address: '深圳市福田区深南大道1000号招商银行大厦20层',
+              zipCode: '518040'
+            },
+            keyTimeline: {
+              bidDeadline: '2025年10月28日 09:30:00（北京时间）',
+              submissionMethod: '现场递交纸质投标文件正副本各一套，同时提交电子版U盘',
+              openingTime: '2025年10月28日 10:00:00（北京时间）',
+              openingLocation: '深圳市南山区高新技术产业园区管委会开标室（主楼5楼503室）'
+            },
+            bidBond: {
+              submissionMethod: '银行转账、银行保函或保险保函（任选其一）',
+              amount: '人民币 80 万元整（¥800,000.00）',
+              refundPolicy: '1. 未中标单位的投标保证金在中标通知书发出后5个工作日内无息退还；\n2. 中标单位的投标保证金在签订合同并缴纳履约保证金后5个工作日内无息退还；\n3. 投标保证金账户信息：\n   开户名称：深圳建信招标代理有限公司\n   开户银行：招商银行深圳分行福田支行\n   账号：7559 1234 5678 9012\n   用途：项目编号-ZFCG-2025-088+投标单位名称'
+            }
           },
-          qualificationRequirements: '具有建筑智能化工程专业承包一级资质\n注册资金不低于2000万元\n具有ISO9001质量管理体系认证\n近三年完成过不少于2个类似项目业绩',
+          qualificationRequirements: '1. 具有独立承担民事责任的能力（提供有效的营业执照或事业单位法人证书）\n2. 具有良好的商业信誉和健全的财务会计制度（提供2024年度财务审计报告）\n3. 具有建筑智能化工程专业承包一级资质或电子与智能化工程专业承包一级资质\n4. 注册资本不低于2000万元人民币\n5. 具有ISO9001质量管理体系认证证书\n6. 参加政府采购活动前三年内，在经营活动中没有重大违法记录（提供声明函）\n7. 近三年内至少完成过2个类似智能化系统集成项目，单个合同金额不低于500万元（提供合同复印件及竣工验收证明）\n8. 拟派项目经理须具有建造师一级资质或高级工程师职称，且具有智能化系统项目管理经验',
           evaluationCriteria: {
             commercial: `一、履约能力评价（17-27）
 1. 经营状况（1-5）：对企业经营状况进行综合评价：企业资产运营能力、履约能力强，整体经营状况优良【4-5分】；企业资产运营能力、履约能力较强，整体经营状况较好【2-3.5分】；企业资产运营能力、履约能力一般，整体经营状况一般【1-1.5分】。
@@ -130,8 +192,8 @@ const BiddingProjectManager: React.FC<BiddingProjectManagerProps> = ({ canEdit =
 五、服务合作（6-10）
 1. 现场安装调试服务、售后服务、履约评价（6-10）：现场安装及售后服务良好，履约情况良好:9~10分；现场安装及售后服务一般，履约情况一般：7~8分；现场安装及售后服务较差，履约情况较差：6分。`
           },
-          documentRequirements: '营业执照副本\n建筑智能化工程专业承包一级资质证书\nISO9001质量管理体系认证证书\n近三年财务审计报告\n类似项目业绩证明材料\n拟派项目经理及主要技术人员资格证书\n设备制造商授权书',
-          risks: '项目工期紧张，需在3个月内完成施工\n涉及多个子系统集成，协调难度大\n需与现有办公系统对接，兼容性要求高\n施工期间不能影响办公楼正常使用',
+          documentRequirements: '1. 投标文件需包含商务标和技术标两个部分，分别独立密封包装\n2. 采用A4纸打印，双面打印，左侧装订成册\n3. 商务标：正本1份，副本3份；技术标：正本1份，副本3份\n4. 电子版U盘2份（PDF格式，不得加密，需与纸质版完全一致）\n5. 投标文件需使用不透明密封袋密封，并在封口处加盖投标人公章骑缝章\n6. 封面需标注：项目名称、项目编号、投标人名称、商务标/技术标标识\n7. 投标文件每页需加盖投标人公章（骑缝章）或在目录、封面、封底加盖公章\n8. 所有证明材料需提供原件备查或加盖公章的彩色复印件\n9. 报价表需单独密封提交，在开标现场唱标时当众拆封',
+          risks: '1. 投标文件逾期送达或未按要求密封的将被拒收，不得进入开标环节\n2. 投标保证金未按时到账或金额不足的视为无效投标\n3. 投标文件出现以下情况将作废标处理：\n   - 未按规定格式填写、内容不全或关键字迹模糊导致无法辨认\n   - 投标人名称或组织结构与营业执照、资质证书不一致\n   - 投标文件未加盖公章或关键内容（投标函、报价表等）未签字盖章\n   - 报价超过招标控制价或低于成本价\n   - 同一投标人提交两个或以上不同的投标文件\n   - 不同投标人的投标文件出现实质性雷同（IP地址相同、编制人相同等）\n4. 项目工期紧张，必须在3个月内完成全部施工、调试及验收工作\n5. 涉及楼宇自控、安防、网络等多个专业子系统，各系统需深度集成联动\n6. 需与现有办公自动化系统、物业管理系统进行数据对接，接口兼容性要求高\n7. 施工期间办公楼正常使用，需采取分区域分时段施工，不得影响日常办公\n8. 投标人不得串通投标、弄虚作假、行贿等违法行为，一经发现将取消投标资格并记入不良行为记录',
           documentDirectory: {
             summary: '根据招标文件要求，本次投标需要提交3个文件：商务文件、技术文件、授权委托书。',
             files: [

@@ -66,6 +66,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
 
   const [searchName, setSearchName] = useState('');
   const [searchBrand, setSearchBrand] = useState('');
+  const [searchSpecification, setSearchSpecification] = useState('');
+  const [searchModel, setSearchModel] = useState('');
   const [searchCategory, setSearchCategory] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -324,8 +326,10 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
     return data[activeCategory].filter(product => {
       const matchesName = !searchName || product.name.toLowerCase().includes(searchName.toLowerCase());
       const matchesBrand = !searchBrand || product.brand.toLowerCase().includes(searchBrand.toLowerCase());
+      const matchesSpecification = !searchSpecification || product.specification.toLowerCase().includes(searchSpecification.toLowerCase());
+      const matchesModel = !searchModel || product.model.toLowerCase().includes(searchModel.toLowerCase());
       const matchesCategory = searchCategory === 'all' || product.categoryId === searchCategory;
-      return matchesName && matchesBrand && matchesCategory;
+      return matchesName && matchesBrand && matchesSpecification && matchesModel && matchesCategory;
     });
   };
 
@@ -341,6 +345,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
   const handleReset = () => {
     setSearchName('');
     setSearchBrand('');
+    setSearchSpecification('');
+    setSearchModel('');
     setSearchCategory('all');
     setCurrentPage(1);
   };
@@ -411,8 +417,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
                 ))}
               </div>
 
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3">
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 flex-wrap">
                   产品名称
                   <input
                     type="text"
@@ -429,6 +435,22 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
                     onChange={(e) => setSearchBrand(e.target.value)}
                     className="w-40 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                   />
+                  产品规格
+                  <input
+                    type="text"
+                    placeholder="请输入产品规格"
+                    value={searchSpecification}
+                    onChange={(e) => setSearchSpecification(e.target.value)}
+                    className="w-40 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                  产品型号
+                  <input
+                    type="text"
+                    placeholder="请输入产品型号"
+                    value={searchModel}
+                    onChange={(e) => setSearchModel(e.target.value)}
+                    className="w-40 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  />
                   产品分类
                   <select
                     value={searchCategory}
@@ -442,7 +464,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
                   </select>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex justify-end gap-2">
                   <button
                     onClick={handleReset}
                     className="px-4 py-1.5 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 transition-colors"

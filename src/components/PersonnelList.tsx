@@ -27,6 +27,7 @@ interface PersonnelItem {
   gender: string;
   idNumber: string;
   isLegalPerson: boolean;
+  isAuthorizedRepresentative: boolean;
   phone: string;
   position: string;
   status: 'active' | 'resigned' | 'suspended';
@@ -52,6 +53,7 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
       gender: '男',
       idNumber: '110101199001011234',
       isLegalPerson: true,
+      isAuthorizedRepresentative: true,
       phone: '13800138000',
       position: '项目经理',
       status: 'active',
@@ -91,6 +93,8 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
   const [searchName, setSearchName] = useState('');
   const [searchStatus, setSearchStatus] = useState<string>('all');
   const [searchLegalPerson, setSearchLegalPerson] = useState<string>('all');
+  const [searchAuthorizedRep, setSearchAuthorizedRep] = useState<string>('all');
+  const [searchQualificationCount, setSearchQualificationCount] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [jumpPage, setJumpPage] = useState('');
@@ -140,11 +144,13 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
     setSearchName('');
     setSearchStatus('all');
     setSearchLegalPerson('all');
+    setSearchAuthorizedRep('all');
+    setSearchQualificationCount('');
     setCurrentPage(1);
   };
 
   const handleSearch = () => {
-    console.log('Searching:', searchName, searchStatus, searchLegalPerson);
+    console.log('Searching:', searchName, searchStatus, searchLegalPerson, searchAuthorizedRep, searchQualificationCount);
   };
 
   const handleAdd = () => {
@@ -154,6 +160,7 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
       gender: '男',
       idNumber: '',
       isLegalPerson: false,
+      isAuthorizedRepresentative: false,
       phone: '',
       position: '',
       status: 'active',
@@ -455,7 +462,12 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
     const matchesLegalPerson = searchLegalPerson === 'all' ||
       (searchLegalPerson === 'yes' && item.isLegalPerson) ||
       (searchLegalPerson === 'no' && !item.isLegalPerson);
-    return matchesName && matchesStatus && matchesLegalPerson;
+    const matchesAuthorizedRep = searchAuthorizedRep === 'all' ||
+      (searchAuthorizedRep === 'yes' && item.isAuthorizedRepresentative) ||
+      (searchAuthorizedRep === 'no' && !item.isAuthorizedRepresentative);
+    const totalQualifications = item.certificates.length + item.qualifications.length;
+    const matchesQualificationCount = !searchQualificationCount || totalQualifications >= parseInt(searchQualificationCount);
+    return matchesName && matchesStatus && matchesLegalPerson && matchesAuthorizedRep && matchesQualificationCount;
   });
 
   const paginatedItems = () => {
@@ -577,7 +589,7 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
                     <option value="suspended">停用</option>
                   </select>
                 </div>
-                <div className="col-span-3">
+                <div className="col-span-3 flex gap-6">
                   <label className="flex items-center space-x-2">
                     <input
                       type="checkbox"
@@ -586,6 +598,15 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
                       className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
                     />
                     <span className="text-sm font-medium text-neutral-700">是否法人</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={editingItem.isAuthorizedRepresentative}
+                      onChange={(e) => setEditingItem({ ...editingItem, isAuthorizedRepresentative: e.target.checked })}
+                      className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+                    />
+                    <span className="text-sm font-medium text-neutral-700">是否授权委托人</span>
                   </label>
                 </div>
                 <div className="col-span-3">
@@ -822,8 +843,8 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
               <h2 className="text-lg font-medium text-neutral-900">人员信息</h2>
             </div>
 
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 姓名
                 <input
                   type="text"
@@ -853,9 +874,28 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
                   <option value="yes">是</option>
                   <option value="no">否</option>
                 </select>
+                是否授权委托人
+                <select
+                  value={searchAuthorizedRep}
+                  onChange={(e) => setSearchAuthorizedRep(e.target.value)}
+                  className="px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="all">全部</option>
+                  <option value="yes">是</option>
+                  <option value="no">否</option>
+                </select>
+                资质数量
+                <input
+                  type="number"
+                  placeholder="最小数量"
+                  value={searchQualificationCount}
+                  onChange={(e) => setSearchQualificationCount(e.target.value)}
+                  className="w-32 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  min="0"
+                />
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex justify-end gap-2">
                 <button
                   onClick={handleReset}
                   className="px-4 py-1.5 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 transition-colors"
@@ -894,6 +934,7 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">联系电话</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">职务</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">是否法人</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">是否授权委托人</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">人员状态</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">证书数量</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">证书状态</th>
@@ -903,7 +944,7 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
               <tbody className="divide-y divide-neutral-200">
                 {paginatedItems().length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-4 py-8 text-center text-neutral-500">
+                    <td colSpan={11} className="px-4 py-8 text-center text-neutral-500">
                       暂无数据
                     </td>
                   </tr>
@@ -929,6 +970,9 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
                         </td>
                         <td className="px-4 py-2.5 whitespace-nowrap text-sm text-neutral-900">
                           {item.isLegalPerson ? '是' : '否'}
+                        </td>
+                        <td className="px-4 py-2.5 whitespace-nowrap text-sm text-neutral-900">
+                          {item.isAuthorizedRepresentative ? '是' : '否'}
                         </td>
                         <td className="px-4 py-2.5 whitespace-nowrap text-sm">
                           <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>

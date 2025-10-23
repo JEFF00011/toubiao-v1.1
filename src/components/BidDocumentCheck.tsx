@@ -3,16 +3,24 @@ import { Plus, Edit, Trash2, Eye, RefreshCw, X, FileCheck, CheckCircle, AlertCir
 import CheckPointManager from './CheckPointManager';
 import BidDocumentCheckCreate from './BidDocumentCheckCreate';
 
+interface CheckPointDetail {
+  name: string;
+  category: string;
+  status: 'passed' | 'failed';
+  description: string;
+}
+
 interface CheckRecord {
   id: string;
   name: string;
   documentName: string;
   documentType: 'generated' | 'uploaded';
-  status: 'pending' | 'checking' | 'completed' | 'failed';
+  status: 'pending' | 'checking' | 'passed' | 'not_passed' | 'failed';
   progress?: number;
   totalCheckPoints: number;
   passedCheckPoints: number;
   failedCheckPoints: number;
+  checkPointDetails?: CheckPointDetail[];
   createdAt: string;
   completedAt: string | null;
 }
@@ -23,10 +31,37 @@ const MOCK_CHECKS: CheckRecord[] = [
     name: '某医院信息化建设项目投标文件检查',
     documentName: '某医院信息化建设项目投标书.pdf',
     documentType: 'generated',
-    status: 'completed',
+    status: 'not_passed',
     totalCheckPoints: 25,
     passedCheckPoints: 22,
     failedCheckPoints: 3,
+    checkPointDetails: [
+      { name: '封面格式检查', category: '格式规范', status: 'passed', description: '封面信息完整，格式符合要求' },
+      { name: '目录完整性检查', category: '格式规范', status: 'passed', description: '目录层级清晰，页码准确' },
+      { name: '投标函签字盖章', category: '格式规范', status: 'passed', description: '投标函已由法定代表人签字并加盖公章' },
+      { name: '法定代表人授权书', category: '资格文件', status: 'passed', description: '授权书格式正确，授权人签字清晰' },
+      { name: '营业执照副本', category: '资格文件', status: 'passed', description: '营业执照在有效期内，加盖公章' },
+      { name: '资质证书', category: '资格文件', status: 'passed', description: '资质证书齐全有效，满足招标要求' },
+      { name: 'ISO质量管理体系认证', category: '资格文件', status: 'passed', description: '质量管理体系认证证书有效' },
+      { name: '财务审计报告', category: '资格文件', status: 'passed', description: '提供了2023年度完整财务审计报告' },
+      { name: '类似业绩证明', category: '资格文件', status: 'passed', description: '提供了3个类似项目业绩，满足要求' },
+      { name: '投标报价表', category: '商务部分', status: 'failed', description: '报价表缺少部分必填项，未填写税率' },
+      { name: '报价说明', category: '商务部分', status: 'passed', description: '报价说明详细，费用构成清晰' },
+      { name: '投标保证金凭证', category: '商务部分', status: 'passed', description: '提供了银行转账凭证，金额正确' },
+      { name: '技术方案完整性', category: '技术部分', status: 'passed', description: '技术方案详细完整，逻辑清晰' },
+      { name: '技术参数响应', category: '技术部分', status: 'passed', description: '技术参数完全响应招标文件要求' },
+      { name: '实施方案', category: '技术部分', status: 'passed', description: '实施方案合理可行，进度安排明确' },
+      { name: '项目组织架构', category: '技术部分', status: 'passed', description: '项目组织架构完整，职责分工明确' },
+      { name: '项目经理资格证书', category: '人员资质', status: 'passed', description: '项目经理具有一级建造师资格' },
+      { name: '主要技术人员证书', category: '人员资质', status: 'failed', description: '缺少1名技术人员的职称证书' },
+      { name: '质量保证措施', category: '技术部分', status: 'passed', description: '质量保证措施完善，符合要求' },
+      { name: '安全保障措施', category: '技术部分', status: 'passed', description: '安全措施详细，应急预案完整' },
+      { name: '售后服务方案', category: '技术部分', status: 'passed', description: '售后服务承诺明确，响应时间合理' },
+      { name: '培训方案', category: '技术部分', status: 'passed', description: '培训方案详细，培训内容全面' },
+      { name: '设备清单', category: '技术部分', status: 'passed', description: '设备清单完整，品牌型号明确' },
+      { name: '设备制造商授权书', category: '技术部分', status: 'failed', description: '缺少主要设备制造商授权书原件' },
+      { name: '投标文件装订', category: '格式规范', status: 'passed', description: '投标文件装订规范，便于查阅' }
+    ],
     createdAt: '2024-01-20 14:30:00',
     completedAt: '2024-01-20 14:35:00'
   },
@@ -65,6 +100,40 @@ const MOCK_CHECKS: CheckRecord[] = [
     failedCheckPoints: 0,
     createdAt: '2024-01-12 16:20:00',
     completedAt: null
+  },
+  {
+    id: '5',
+    name: '交通运输系统集成项目投标文件检查',
+    documentName: '交通运输系统集成投标书.pdf',
+    documentType: 'generated',
+    status: 'passed',
+    totalCheckPoints: 20,
+    passedCheckPoints: 20,
+    failedCheckPoints: 0,
+    checkPointDetails: [
+      { name: '封面格式检查', category: '格式规范', status: 'passed', description: '封面信息完整，格式符合要求' },
+      { name: '目录完整性检查', category: '格式规范', status: 'passed', description: '目录层级清晰，页码准确' },
+      { name: '投标函签字盖章', category: '格式规范', status: 'passed', description: '投标函已由法定代表人签字并加盖公章' },
+      { name: '法定代表人授权书', category: '资格文件', status: 'passed', description: '授权书格式正确，授权人签字清晰' },
+      { name: '营业执照副本', category: '资格文件', status: 'passed', description: '营业执照在有效期内，加盖公章' },
+      { name: '资质证书', category: '资格文件', status: 'passed', description: '资质证书齐全有效，满足招标要求' },
+      { name: '财务审计报告', category: '资格文件', status: 'passed', description: '提供了2023年度完整财务审计报告' },
+      { name: '类似业绩证明', category: '资格文件', status: 'passed', description: '提供了2个类似项目业绩，满足要求' },
+      { name: '投标报价表', category: '商务部分', status: 'passed', description: '报价表填写完整，格式规范' },
+      { name: '报价说明', category: '商务部分', status: 'passed', description: '报价说明详细，费用构成清晰' },
+      { name: '投标保证金凭证', category: '商务部分', status: 'passed', description: '提供了银行保函，金额正确' },
+      { name: '技术方案完整性', category: '技术部分', status: 'passed', description: '技术方案详细完整，方案可行' },
+      { name: '技术参数响应', category: '技术部分', status: 'passed', description: '技术参数完全响应招标文件要求' },
+      { name: '实施方案', category: '技术部分', status: 'passed', description: '实施方案合理，进度安排科学' },
+      { name: '项目经理资格证书', category: '人员资质', status: 'passed', description: '项目经理具有PMP资格证书' },
+      { name: '主要技术人员证书', category: '人员资质', status: 'passed', description: '技术人员证书齐全，满足要求' },
+      { name: '质量保证措施', category: '技术部分', status: 'passed', description: '质量保证措施完善，符合要求' },
+      { name: '售后服务方案', category: '技术部分', status: 'passed', description: '售后服务承诺明确，响应时间合理' },
+      { name: '设备清单', category: '技术部分', status: 'passed', description: '设备清单完整，品牌型号明确' },
+      { name: '投标文件装订', category: '格式规范', status: 'passed', description: '投标文件装订规范，便于查阅' }
+    ],
+    createdAt: '2024-01-22 11:00:00',
+    completedAt: '2024-01-22 11:05:00'
   }
 ];
 
@@ -122,10 +191,57 @@ const BidDocumentCheck: React.FC<BidDocumentCheckProps> = ({ canEdit = true, can
     const statusMap: Record<string, { text: string; color: string }> = {
       pending: { text: '待检查', color: 'bg-yellow-100 text-yellow-800' },
       checking: { text: '检查中', color: 'bg-blue-100 text-blue-800' },
-      completed: { text: '已完成', color: 'bg-green-100 text-green-800' },
+      passed: { text: '检查通过', color: 'bg-green-100 text-green-800' },
+      not_passed: { text: '检查不通过', color: 'bg-orange-100 text-orange-800' },
       failed: { text: '检查失败', color: 'bg-red-100 text-red-800' }
     };
     return statusMap[status] || { text: status, color: 'bg-gray-100 text-gray-800' };
+  };
+
+  const generateCheckPointDetails = (totalPoints: number, failedCount: number): CheckPointDetail[] => {
+    const allCheckPoints = [
+      { name: '封面格式检查', category: '格式规范', description: '封面信息完整，格式符合要求' },
+      { name: '目录完整性检查', category: '格式规范', description: '目录层级清晰，页码准确' },
+      { name: '投标函签字盖章', category: '格式规范', description: '投标函已由法定代表人签字并加盖公章' },
+      { name: '法定代表人授权书', category: '资格文件', description: '授权书格式正确，授权人签字清晰' },
+      { name: '营业执照副本', category: '资格文件', description: '营业执照在有效期内，加盖公章' },
+      { name: '资质证书', category: '资格文件', description: '资质证书齐全有效，满足招标要求' },
+      { name: 'ISO质量管理体系认证', category: '资格文件', description: '质量管理体系认证证书有效' },
+      { name: '财务审计报告', category: '资格文件', description: '提供了2023年度完整财务审计报告' },
+      { name: '类似业绩证明', category: '资格文件', description: '提供了类似项目业绩，满足要求' },
+      { name: '投标报价表', category: '商务部分', description: '报价表填写完整，格式规范' },
+      { name: '报价说明', category: '商务部分', description: '报价说明详细，费用构成清晰' },
+      { name: '投标保证金凭证', category: '商务部分', description: '提供了投标保证金缴纳凭证' },
+      { name: '技术方案完整性', category: '技术部分', description: '技术方案详细完整，逻辑清晰' },
+      { name: '技术参数响应', category: '技术部分', description: '技术参数完全响应招标文件要求' },
+      { name: '实施方案', category: '技术部分', description: '实施方案合理可行，进度安排明确' },
+      { name: '项目组织架构', category: '技术部分', description: '项目组织架构完整，职责分工明确' },
+      { name: '项目经理资格证书', category: '人员资质', description: '项目经理具有相应资格证书' },
+      { name: '主要技术人员证书', category: '人员资质', description: '技术人员证书齐全，满足要求' },
+      { name: '质量保证措施', category: '技术部分', description: '质量保证措施完善，符合要求' },
+      { name: '安全保障措施', category: '技术部分', description: '安全措施详细，应急预案完整' },
+      { name: '售后服务方案', category: '技术部分', description: '售后服务承诺明确，响应时间合理' },
+      { name: '培训方案', category: '技术部分', description: '培训方案详细，培训内容全面' },
+      { name: '设备清单', category: '技术部分', description: '设备清单完整，品牌型号明确' },
+      { name: '设备制造商授权书', category: '技术部分', description: '提供了设备制造商授权书' },
+      { name: '投标文件装订', category: '格式规范', description: '投标文件装订规范，便于查阅' }
+    ];
+
+    const selectedPoints = allCheckPoints.slice(0, totalPoints);
+    const failedIndices = new Set<number>();
+
+    while (failedIndices.size < failedCount) {
+      const randomIndex = Math.floor(Math.random() * totalPoints);
+      failedIndices.add(randomIndex);
+    }
+
+    return selectedPoints.map((point, index) => ({
+      ...point,
+      status: failedIndices.has(index) ? 'failed' as const : 'passed' as const,
+      description: failedIndices.has(index)
+        ? point.description.replace('完整', '不完整').replace('齐全', '缺失').replace('有效', '过期').replace('符合', '不符合')
+        : point.description
+    }));
   };
 
   const handleDeleteCheck = (check: CheckRecord) => {
@@ -159,13 +275,16 @@ const BidDocumentCheck: React.FC<BidDocumentCheckProps> = ({ canEdit = true, can
 
     setTimeout(() => {
       const passed = Math.floor(Math.random() * 5) + (check.totalCheckPoints - 5);
+      const failed = check.totalCheckPoints - passed;
+      const checkPointDetails = generateCheckPointDetails(check.totalCheckPoints, failed);
       setChecks(checks.map(c =>
         c.id === check.id
           ? {
               ...c,
-              status: 'completed' as const,
+              status: (failed > 0 ? 'not_passed' : 'passed') as const,
               passedCheckPoints: passed,
-              failedCheckPoints: check.totalCheckPoints - passed,
+              failedCheckPoints: failed,
+              checkPointDetails,
               completedAt: new Date().toLocaleString('zh-CN')
             }
           : c
@@ -182,13 +301,16 @@ const BidDocumentCheck: React.FC<BidDocumentCheckProps> = ({ canEdit = true, can
 
     setTimeout(() => {
       const passed = Math.floor(Math.random() * 5) + (check.totalCheckPoints - 5);
+      const failed = check.totalCheckPoints - passed;
+      const checkPointDetails = generateCheckPointDetails(check.totalCheckPoints, failed);
       setChecks(checks.map(c =>
         c.id === check.id
           ? {
               ...c,
-              status: 'completed' as const,
+              status: (failed > 0 ? 'not_passed' : 'passed') as const,
               passedCheckPoints: passed,
-              failedCheckPoints: check.totalCheckPoints - passed,
+              failedCheckPoints: failed,
+              checkPointDetails,
               completedAt: new Date().toLocaleString('zh-CN')
             }
           : c
@@ -210,15 +332,18 @@ const BidDocumentCheck: React.FC<BidDocumentCheckProps> = ({ canEdit = true, can
   };
 
   const handleCreateComplete = (newCheck: any) => {
+    const failed = newCheck.failedCheckPoints || 0;
+    const checkPointDetails = generateCheckPointDetails(newCheck.totalCheckPoints, failed);
     const check: CheckRecord = {
       id: String(Date.now()),
       name: newCheck.name,
       documentName: newCheck.documentName,
       documentType: newCheck.documentType,
-      status: 'completed',
+      status: failed > 0 ? 'not_passed' : 'passed',
       totalCheckPoints: newCheck.totalCheckPoints,
       passedCheckPoints: newCheck.passedCheckPoints || 0,
-      failedCheckPoints: newCheck.failedCheckPoints || 0,
+      failedCheckPoints: failed,
+      checkPointDetails,
       createdAt: new Date().toLocaleString('zh-CN'),
       completedAt: new Date().toLocaleString('zh-CN')
     };
@@ -309,7 +434,8 @@ const BidDocumentCheck: React.FC<BidDocumentCheckProps> = ({ canEdit = true, can
                   <option value="all">全部状态</option>
                   <option value="pending">待检查</option>
                   <option value="checking">检查中</option>
-                  <option value="completed">已完成</option>
+                  <option value="passed">检查通过</option>
+                  <option value="not_passed">检查不通过</option>
                   <option value="failed">检查失败</option>
                 </select>
               </div>
@@ -410,7 +536,7 @@ const BidDocumentCheck: React.FC<BidDocumentCheckProps> = ({ canEdit = true, can
                         {check.totalCheckPoints}
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap text-sm">
-                        {check.status === 'completed' ? (
+                        {(check.status === 'passed' || check.status === 'not_passed') ? (
                           <span>
                             <span className="text-green-600 font-medium">{check.passedCheckPoints}</span>
                             <span className="text-neutral-400 mx-1">/</span>
@@ -448,7 +574,7 @@ const BidDocumentCheck: React.FC<BidDocumentCheckProps> = ({ canEdit = true, can
                               编辑
                             </button>
                           )}
-                          {check.status === 'completed' && (
+                          {(check.status === 'passed' || check.status === 'not_passed') && (
                             <>
                               <button
                                 onClick={() => handleViewDetail(check)}
@@ -681,14 +807,14 @@ const BidDocumentCheck: React.FC<BidDocumentCheckProps> = ({ canEdit = true, can
 
                 <div>
                   <h4 className="font-medium text-neutral-900 mb-3">检查点详情</h4>
+                  {(!selectedCheck.checkPointDetails || selectedCheck.checkPointDetails.length === 0) ? (
+                    <div className="text-center py-8 text-neutral-500">
+                      <AlertCircle className="w-12 h-12 mx-auto mb-2 text-neutral-400" />
+                      <p>暂无检查点详情数据</p>
+                    </div>
+                  ) : (
                   <div className="space-y-2">
-                    {[
-                      { name: '封面格式检查', category: '格式规范', status: 'passed', description: '封面信息完整，格式符合要求' },
-                      { name: '目录完整性检查', category: '格式规范', status: 'passed', description: '目录层级清晰，页码准确' },
-                      { name: '技术方案完整性', category: '内容检查', status: 'passed', description: '技术方案详细完整' },
-                      { name: '报价表格式', category: '商务部分', status: 'failed', description: '报价表缺少部分必填项' },
-                      { name: '资质证书', category: '资格文件', status: 'passed', description: '资质证书齐全有效' },
-                    ].map((item, index) => (
+                    {selectedCheck.checkPointDetails.map((item, index) => (
                       <div key={index} className={`p-3 rounded-lg border-l-4 ${
                         item.status === 'passed'
                           ? 'bg-green-50 border-green-500'
@@ -720,6 +846,7 @@ const BidDocumentCheck: React.FC<BidDocumentCheckProps> = ({ canEdit = true, can
                       </div>
                     ))}
                   </div>
+                  )}
                 </div>
               </div>
 

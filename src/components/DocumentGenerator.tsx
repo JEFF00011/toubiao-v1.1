@@ -44,6 +44,16 @@ interface KnowledgeItem {
   clientName?: string;
   position?: string;
   contractNumber?: string;
+  contractAmount?: string;
+  productName?: string;
+  productBrand?: string;
+  productSpec?: string;
+  productModel?: string;
+  productQuantity?: string;
+  productCategory?: string;
+  qualificationCount?: number;
+  isLegalPerson?: boolean;
+  isAuthorizedDelegate?: boolean;
 }
 
 interface FilterConfig {
@@ -51,6 +61,7 @@ interface FilterConfig {
   rating?: string[];
   status?: string[];
   position?: string[];
+  productCategory?: string[];
 }
 
 interface DocumentGeneratorProps {
@@ -78,6 +89,8 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [knowledgeCategories, setKnowledgeCategories] = useState<KnowledgeCategory[]>([]);
   const [categoryFilters, setCategoryFilters] = useState<{ [key: string]: { [key: string]: string } }>({});
+  const [categorySearches, setCategorySearches] = useState<{ [key: string]: { [key: string]: string } }>({});
+  const [activeKnowledgeTab, setActiveKnowledgeTab] = useState('company');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
@@ -216,6 +229,21 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       filters: {
         position: ['项目经理', '技术总监', '架构师', '开发经理'],
         status: ['active', 'resigned']
+      }
+    },
+    {
+      id: 'product',
+      name: '产品信息',
+      items: [
+        { id: 'prod_1', name: '企业级路由器 ER8300G', productCategory: '网络设备', productBrand: '华为', productSpec: '企业级', productModel: 'ER8300G', selected: true },
+        { id: 'prod_2', name: '高性能交换机 S5720-SI', productCategory: '网络设备', productBrand: '华为', productSpec: '千兆24口', productModel: 'S5720-28P-SI', selected: true },
+        { id: 'prod_3', name: 'ThinkCentre M920t 台式机', productCategory: '计算机设备', productBrand: '联想', productSpec: 'i7/16G/512G', productModel: 'M920t', selected: false },
+        { id: 'prod_4', name: 'ThinkPad X1 Carbon 笔记本', productCategory: '计算机设备', productBrand: '联想', productSpec: 'i7/16G/1T', productModel: 'X1 Carbon Gen 11', selected: false },
+        { id: 'prod_5', name: 'Dell PowerEdge R740 服务器', productCategory: '服务器', productBrand: 'Dell', productSpec: '2U机架式', productModel: 'R740', selected: true },
+        { id: 'prod_6', name: '惠普LaserJet Pro M428 打印机', productCategory: '办公设备', productBrand: '惠普', productSpec: '激光多功能一体机', productModel: 'M428fdw', selected: false }
+      ],
+      filters: {
+        productCategory: ['网络设备', '计算机设备', '服务器', '办公设备']
       }
     },
     {
@@ -798,15 +826,338 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     }));
   };
 
+  const handleSearchChange = (categoryId: string, field: string, value: string) => {
+    setCategorySearches(prev => ({
+      ...prev,
+      [categoryId]: {
+        ...prev[categoryId],
+        [field]: value
+      }
+    }));
+  };
+
   const getFilteredItems = (category: KnowledgeCategory) => {
     const filters = categoryFilters[category.id] || {};
+    const searches = categorySearches[category.id] || {};
+
     return category.items.filter(item => {
       if (filters.year && item.year && item.year !== filters.year) return false;
       if (filters.rating && item.rating && item.rating !== filters.rating) return false;
       if (filters.status && item.status && item.status !== filters.status) return false;
       if (filters.position && item.position && item.position !== filters.position) return false;
+      if (filters.productCategory && item.productCategory && item.productCategory !== filters.productCategory) return false;
+
+      if (category.id === 'company') {
+        if (searches.name && !item.name?.toLowerCase().includes(searches.name.toLowerCase())) return false;
+      }
+
+      if (category.id === 'qualification') {
+        if (searches.name && !item.name?.toLowerCase().includes(searches.name.toLowerCase())) return false;
+        if (searches.certNumber && !item.certNumber?.toLowerCase().includes(searches.certNumber.toLowerCase())) return false;
+        if (searches.rating && !item.rating?.toLowerCase().includes(searches.rating.toLowerCase())) return false;
+      }
+
+      if (category.id === 'financial') {
+        if (searches.name && !item.name?.toLowerCase().includes(searches.name.toLowerCase())) return false;
+      }
+
+      if (category.id === 'performance') {
+        if (searches.projectName && !item.projectName?.toLowerCase().includes(searches.projectName.toLowerCase())) return false;
+        if (searches.contractNumber && !item.contractNumber?.toLowerCase().includes(searches.contractNumber.toLowerCase())) return false;
+        if (searches.contractAmountMin) {
+          const minAmount = parseFloat(searches.contractAmountMin);
+          const itemAmount = parseFloat(item.contractAmount?.replace(/[^\d.]/g, '') || '0');
+          if (itemAmount <= minAmount) return false;
+        }
+        if (searches.productName && !item.productName?.toLowerCase().includes(searches.productName.toLowerCase())) return false;
+        if (searches.productBrand && !item.productBrand?.toLowerCase().includes(searches.productBrand.toLowerCase())) return false;
+        if (searches.productSpec && !item.productSpec?.toLowerCase().includes(searches.productSpec.toLowerCase())) return false;
+        if (searches.productModel && !item.productModel?.toLowerCase().includes(searches.productModel.toLowerCase())) return false;
+        if (searches.productQuantity && !item.productQuantity?.toLowerCase().includes(searches.productQuantity.toLowerCase())) return false;
+      }
+
+      if (category.id === 'personnel') {
+        if (searches.name && !item.name?.toLowerCase().includes(searches.name.toLowerCase())) return false;
+      }
+
+      if (category.id === 'product') {
+        if (searches.name && !item.name?.toLowerCase().includes(searches.name.toLowerCase())) return false;
+        if (searches.productBrand && !item.productBrand?.toLowerCase().includes(searches.productBrand.toLowerCase())) return false;
+        if (searches.productSpec && !item.productSpec?.toLowerCase().includes(searches.productSpec.toLowerCase())) return false;
+        if (searches.productModel && !item.productModel?.toLowerCase().includes(searches.productModel.toLowerCase())) return false;
+      }
+
+      if (category.id === 'templates') {
+        if (searches.name && !item.name?.toLowerCase().includes(searches.name.toLowerCase())) return false;
+      }
+
       return true;
     });
+  };
+
+  const renderSearchFields = (category: KnowledgeCategory) => {
+    const searches = categorySearches[category.id] || {};
+    const filters = categoryFilters[category.id] || {};
+
+    if (category.id === 'company') {
+      return (
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            type="text"
+            placeholder="公司名称"
+            value={searches.name || ''}
+            onChange={(e) => handleSearchChange(category.id, 'name', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-40"
+          />
+        </div>
+      );
+    }
+
+    if (category.id === 'qualification') {
+      return (
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            type="text"
+            placeholder="资质名称"
+            value={searches.name || ''}
+            onChange={(e) => handleSearchChange(category.id, 'name', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-32"
+          />
+          <input
+            type="text"
+            placeholder="资质编号"
+            value={searches.certNumber || ''}
+            onChange={(e) => handleSearchChange(category.id, 'certNumber', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-32"
+          />
+          <input
+            type="text"
+            placeholder="证书级别"
+            value={searches.rating || ''}
+            onChange={(e) => handleSearchChange(category.id, 'rating', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-24"
+          />
+          {category.filters?.rating && (
+            <select
+              value={filters.rating || ''}
+              onChange={(e) => handleCategoryFilterChange(category.id, 'rating', e.target.value)}
+              className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500"
+            >
+              <option value="">所有等级</option>
+              {category.filters.rating.map(rating => (
+                <option key={rating} value={rating}>{rating}</option>
+              ))}
+            </select>
+          )}
+          {category.filters?.status && (
+            <select
+              value={filters.status || ''}
+              onChange={(e) => handleCategoryFilterChange(category.id, 'status', e.target.value)}
+              className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500"
+            >
+              <option value="">所有状态</option>
+              {category.filters.status.map(status => (
+                <option key={status} value={status}>
+                  {status === 'valid' ? '有效' : status === 'expired' ? '已过期' : status === 'active' ? '在职' : '离职'}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+      );
+    }
+
+    if (category.id === 'financial') {
+      return (
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            type="text"
+            placeholder="财务信息名称"
+            value={searches.name || ''}
+            onChange={(e) => handleSearchChange(category.id, 'name', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-40"
+          />
+          {category.filters?.year && (
+            <select
+              value={filters.year || ''}
+              onChange={(e) => handleCategoryFilterChange(category.id, 'year', e.target.value)}
+              className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500"
+            >
+              <option value="">所有年份</option>
+              {category.filters.year.map(year => (
+                <option key={year} value={year}>{year}年</option>
+              ))}
+            </select>
+          )}
+        </div>
+      );
+    }
+
+    if (category.id === 'performance') {
+      return (
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            type="text"
+            placeholder="项目名称"
+            value={searches.projectName || ''}
+            onChange={(e) => handleSearchChange(category.id, 'projectName', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-28"
+          />
+          <input
+            type="text"
+            placeholder="合同编号"
+            value={searches.contractNumber || ''}
+            onChange={(e) => handleSearchChange(category.id, 'contractNumber', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-28"
+          />
+          <input
+            type="number"
+            placeholder="金额大于"
+            value={searches.contractAmountMin || ''}
+            onChange={(e) => handleSearchChange(category.id, 'contractAmountMin', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-24"
+          />
+          <input
+            type="text"
+            placeholder="产品名称"
+            value={searches.productName || ''}
+            onChange={(e) => handleSearchChange(category.id, 'productName', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-24"
+          />
+          <input
+            type="text"
+            placeholder="产品品牌"
+            value={searches.productBrand || ''}
+            onChange={(e) => handleSearchChange(category.id, 'productBrand', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-24"
+          />
+          <input
+            type="text"
+            placeholder="产品规格"
+            value={searches.productSpec || ''}
+            onChange={(e) => handleSearchChange(category.id, 'productSpec', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-24"
+          />
+          <input
+            type="text"
+            placeholder="产品型号"
+            value={searches.productModel || ''}
+            onChange={(e) => handleSearchChange(category.id, 'productModel', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-24"
+          />
+          <input
+            type="text"
+            placeholder="产品数量"
+            value={searches.productQuantity || ''}
+            onChange={(e) => handleSearchChange(category.id, 'productQuantity', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-24"
+          />
+        </div>
+      );
+    }
+
+    if (category.id === 'personnel') {
+      return (
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            type="text"
+            placeholder="人员姓名"
+            value={searches.name || ''}
+            onChange={(e) => handleSearchChange(category.id, 'name', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-32"
+          />
+          {category.filters?.status && (
+            <select
+              value={filters.status || ''}
+              onChange={(e) => handleCategoryFilterChange(category.id, 'status', e.target.value)}
+              className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500"
+            >
+              <option value="">所有状态</option>
+              {category.filters.status.map(status => (
+                <option key={status} value={status}>
+                  {status === 'valid' ? '有效' : status === 'expired' ? '已过期' : status === 'active' ? '在职' : '离职'}
+                </option>
+              ))}
+            </select>
+          )}
+          {category.filters?.position && (
+            <select
+              value={filters.position || ''}
+              onChange={(e) => handleCategoryFilterChange(category.id, 'position', e.target.value)}
+              className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500"
+            >
+              <option value="">所有职位</option>
+              {category.filters.position.map(position => (
+                <option key={position} value={position}>{position}</option>
+              ))}
+            </select>
+          )}
+        </div>
+      );
+    }
+
+    if (category.id === 'product') {
+      return (
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            type="text"
+            placeholder="产品名称"
+            value={searches.name || ''}
+            onChange={(e) => handleSearchChange(category.id, 'name', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-28"
+          />
+          <input
+            type="text"
+            placeholder="产品品牌"
+            value={searches.productBrand || ''}
+            onChange={(e) => handleSearchChange(category.id, 'productBrand', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-24"
+          />
+          <input
+            type="text"
+            placeholder="产品规格"
+            value={searches.productSpec || ''}
+            onChange={(e) => handleSearchChange(category.id, 'productSpec', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-24"
+          />
+          <input
+            type="text"
+            placeholder="产品型号"
+            value={searches.productModel || ''}
+            onChange={(e) => handleSearchChange(category.id, 'productModel', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-24"
+          />
+          {category.filters?.productCategory && (
+            <select
+              value={filters.productCategory || ''}
+              onChange={(e) => handleCategoryFilterChange(category.id, 'productCategory', e.target.value)}
+              className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500"
+            >
+              <option value="">所有分类</option>
+              {category.filters.productCategory.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          )}
+        </div>
+      );
+    }
+
+    if (category.id === 'templates') {
+      return (
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            type="text"
+            placeholder="文件名称"
+            value={searches.name || ''}
+            onChange={(e) => handleSearchChange(category.id, 'name', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-40"
+          />
+        </div>
+      );
+    }
+
+    return null;
   };
 
   const renderItemDisplay = (item: KnowledgeItem, category: KnowledgeCategory) => {
@@ -876,136 +1227,136 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       );
     }
 
+    if (category.id === 'product') {
+      return (
+        <div className="ml-3 flex-1">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-neutral-900">{item.name}</span>
+            <div className="flex items-center space-x-3 text-xs text-neutral-600">
+              <span className="px-2 py-0.5 bg-purple-100 text-purple-700 rounded">{item.productCategory}</span>
+              <span>品牌：{item.productBrand}</span>
+              <span>型号：{item.productModel}</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return <span className="ml-3 text-sm text-neutral-900">{item.name}</span>;
   };
 
-  const renderStep5 = () => (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <p className="text-sm text-blue-800">
-          第五步：选择需要使用的企业知识库资料，勾选的资料将作为生成投标文件的数据来源。支持按类型筛选查找。
-        </p>
-      </div>
-      <h3 className="text-lg font-medium text-neutral-900 mb-4">选择知识库资料 <span className="text-red-500">*</span></h3>
-      <div className="space-y-4">
-        {knowledgeCategories.map(category => {
-          const filteredItems = getFilteredItems(category);
-          const selectedCount = filteredItems.filter(item => item.selected).length;
+  const renderStep5 = () => {
+    const activeCategory = knowledgeCategories.find(cat => cat.id === activeKnowledgeTab);
+    if (!activeCategory) return null;
 
-          return (
-            <div key={category.id} className="border border-neutral-200 rounded-lg overflow-hidden">
-              <div className="bg-neutral-50 px-4 py-3 border-b border-neutral-200">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm font-semibold text-neutral-900">{category.name}</span>
-                    <span className="text-xs text-neutral-600">({selectedCount}/{filteredItems.length})</span>
-                  </div>
-                  {!isViewMode && (
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => toggleCategoryAll(category.id, true)}
-                        className="text-xs text-primary-600 hover:text-primary-800"
-                      >
-                        全选
-                      </button>
-                      <span className="text-neutral-300">|</span>
-                      <button
-                        onClick={() => toggleCategoryAll(category.id, false)}
-                        className="text-xs text-neutral-600 hover:text-neutral-800"
-                      >
-                        取消
-                      </button>
-                    </div>
+    const filteredItems = getFilteredItems(activeCategory);
+    const selectedCount = filteredItems.filter(item => item.selected).length;
+
+    return (
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            第五步：选择需要使用的企业知识库资料，勾选的资料将作为生成投标文件的数据来源。支持按类型筛选查找。
+          </p>
+        </div>
+        <h3 className="text-lg font-medium text-neutral-900 mb-4">选择知识库资料 <span className="text-red-500">*</span></h3>
+
+        <div className="border-b border-neutral-200 mb-4">
+          <div className="flex space-x-1 overflow-x-auto">
+            {knowledgeCategories.map(category => {
+              const categorySelectedCount = category.items.filter(item => item.selected).length;
+              const categoryTotalCount = category.items.length;
+
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => setActiveKnowledgeTab(category.id)}
+                  className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                    activeKnowledgeTab === category.id
+                      ? 'border-primary-600 text-primary-600'
+                      : 'border-transparent text-neutral-600 hover:text-neutral-900 hover:border-neutral-300'
+                  }`}
+                >
+                  {category.name}
+                  {categorySelectedCount > 0 && (
+                    <span className={`ml-2 px-1.5 py-0.5 text-xs rounded ${
+                      activeKnowledgeTab === category.id
+                        ? 'bg-primary-100 text-primary-700'
+                        : 'bg-neutral-100 text-neutral-600'
+                    }`}>
+                      {categorySelectedCount}/{categoryTotalCount}
+                    </span>
                   )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="border border-neutral-200 rounded-lg overflow-hidden">
+          <div className="bg-neutral-50 px-4 py-3 border-b border-neutral-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <span className="text-sm font-semibold text-neutral-900">{activeCategory.name}</span>
+                <span className="text-xs text-neutral-600">({selectedCount}/{filteredItems.length})</span>
+              </div>
+              {!isViewMode && (
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => toggleCategoryAll(activeCategory.id, true)}
+                    className="text-xs text-primary-600 hover:text-primary-800"
+                  >
+                    全选
+                  </button>
+                  <span className="text-neutral-300">|</span>
+                  <button
+                    onClick={() => toggleCategoryAll(activeCategory.id, false)}
+                    className="text-xs text-neutral-600 hover:text-neutral-800"
+                  >
+                    取消
+                  </button>
                 </div>
-
-                {category.filters && (
-                  <div className="flex items-center space-x-3 mt-2">
-                    {category.filters.year && (
-                      <select
-                        value={categoryFilters[category.id]?.year || ''}
-                        onChange={(e) => handleCategoryFilterChange(category.id, 'year', e.target.value)}
-                        className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500"
-                      >
-                        <option value="">所有年份</option>
-                        {category.filters.year.map(year => (
-                          <option key={year} value={year}>{year}年</option>
-                        ))}
-                      </select>
-                    )}
-
-                    {category.filters.rating && (
-                      <select
-                        value={categoryFilters[category.id]?.rating || ''}
-                        onChange={(e) => handleCategoryFilterChange(category.id, 'rating', e.target.value)}
-                        className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500"
-                      >
-                        <option value="">所有等级</option>
-                        {category.filters.rating.map(rating => (
-                          <option key={rating} value={rating}>{rating}</option>
-                        ))}
-                      </select>
-                    )}
-
-                    {category.filters.status && (
-                      <select
-                        value={categoryFilters[category.id]?.status || ''}
-                        onChange={(e) => handleCategoryFilterChange(category.id, 'status', e.target.value)}
-                        className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500"
-                      >
-                        <option value="">所有状态</option>
-                        {category.filters.status.map(status => (
-                          <option key={status} value={status}>
-                            {status === 'valid' ? '有效' : status === 'expired' ? '已过期' : status === 'active' ? '在职' : '离职'}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-
-                    {category.filters.position && (
-                      <select
-                        value={categoryFilters[category.id]?.position || ''}
-                        onChange={(e) => handleCategoryFilterChange(category.id, 'position', e.target.value)}
-                        className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500"
-                      >
-                        <option value="">所有职位</option>
-                        {category.filters.position.map(position => (
-                          <option key={position} value={position}>{position}</option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div className="p-4 space-y-2 max-h-80 overflow-y-auto">
-                {filteredItems.length === 0 ? (
-                  <p className="text-center text-neutral-500 py-4">暂无符合条件的资料</p>
-                ) : (
-                  filteredItems.map(item => (
-                    <label
-                      key={item.id}
-                      className={`flex items-center p-3 rounded border border-transparent ${
-                        !isViewMode ? 'hover:bg-neutral-50 hover:border-neutral-200 cursor-pointer' : 'cursor-not-allowed bg-neutral-50'
-                      } ${item.selected ? 'bg-primary-50 border-primary-200' : ''}`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={item.selected}
-                        onChange={() => toggleKnowledgeItem(category.id, item.id)}
-                        disabled={isViewMode}
-                        className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500 disabled:cursor-not-allowed flex-shrink-0"
-                      />
-                      {renderItemDisplay(item, category)}
-                    </label>
-                  ))
-                )}
-              </div>
+              )}
             </div>
-          );
-        })}
+
+            <div className="mt-3">
+              {renderSearchFields(activeCategory)}
+            </div>
+          </div>
+          <div className="p-4 space-y-2 max-h-96 overflow-y-auto">
+            {filteredItems.length === 0 ? (
+              <p className="text-center text-neutral-500 py-4">暂无符合条件的资料</p>
+            ) : (
+              filteredItems.map(item => {
+                const isExpired = (activeCategory.id === 'qualification' && item.status === 'expired');
+                const isResigned = (activeCategory.id === 'personnel' && item.status === 'resigned');
+                const isDisabled = isViewMode || isExpired || isResigned;
+
+                return (
+                  <label
+                    key={item.id}
+                    className={`flex items-center p-3 rounded border border-transparent ${
+                      !isDisabled ? 'hover:bg-neutral-50 hover:border-neutral-200 cursor-pointer' : 'cursor-not-allowed bg-neutral-50 opacity-60'
+                    } ${item.selected ? 'bg-primary-50 border-primary-200' : ''}`}
+                    title={isExpired ? '已过期资质无法选择' : isResigned ? '离职人员无法选择' : ''}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={item.selected}
+                      onChange={() => toggleKnowledgeItem(activeCategory.id, item.id)}
+                      disabled={isDisabled}
+                      className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500 disabled:cursor-not-allowed flex-shrink-0"
+                    />
+                    {renderItemDisplay(item, activeCategory)}
+                  </label>
+                );
+              })
+            )}
+          </div>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderStep6 = () => {
     if (isComplete || isViewMode) {

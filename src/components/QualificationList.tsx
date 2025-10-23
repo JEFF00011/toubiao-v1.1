@@ -41,6 +41,8 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
   }, [items, companyId]);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchCertNumber, setSearchCertNumber] = useState('');
+  const [searchRating, setSearchRating] = useState('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'valid' | 'expired'>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -59,12 +61,14 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
 
   const handleReset = () => {
     setSearchTerm('');
+    setSearchCertNumber('');
+    setSearchRating('all');
     setStatusFilter('all');
     setCurrentPage(1);
   };
 
   const handleSearch = () => {
-    console.log('Searching:', searchTerm, statusFilter);
+    console.log('Searching:', searchTerm, searchCertNumber, searchRating, statusFilter);
   };
 
   const handleAdd = () => {
@@ -122,14 +126,18 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
   const filteredItems = items
     .filter(item => {
       const matchesSearch = !searchTerm ||
-        item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.certNumber.toLowerCase().includes(searchTerm.toLowerCase());
+        item.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+      const matchesCertNumber = !searchCertNumber ||
+        item.certNumber.toLowerCase().includes(searchCertNumber.toLowerCase());
+
+      const matchesRating = searchRating === 'all' || item.rating === searchRating;
 
       const matchesStatus = statusFilter === 'all' ||
         (statusFilter === 'valid' && !isExpired(item.validUntil)) ||
         (statusFilter === 'expired' && isExpired(item.validUntil));
 
-      return matchesSearch && matchesStatus;
+      return matchesSearch && matchesCertNumber && matchesRating && matchesStatus;
     })
     .sort((a, b) => {
       return new Date(b.validUntil).getTime() - new Date(a.validUntil).getTime();
@@ -173,16 +181,62 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
               <h2 className="text-lg font-medium text-neutral-900">资质信息</h2>
             </div>
 
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 flex-wrap">
                 资质名称
                 <input
                   type="text"
                   placeholder="请输入资质名称"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-48 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-40 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                 />
+                资质编号
+                <input
+                  type="text"
+                  placeholder="请输入资质编号"
+                  value={searchCertNumber}
+                  onChange={(e) => setSearchCertNumber(e.target.value)}
+                  className="w-40 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
+                评级
+                <select
+                  value={searchRating}
+                  onChange={(e) => setSearchRating(e.target.value)}
+                  className="px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="all">全部</option>
+                  <option value="无">无</option>
+                  <option value="特级">特级</option>
+                  <option value="一级">一级</option>
+                  <option value="二级">二级</option>
+                  <option value="三级">三级</option>
+                  <option value="四级">四级</option>
+                  <option value="五级">五级</option>
+                  <option value="甲级">甲级</option>
+                  <option value="乙级">乙级</option>
+                  <option value="丙级">丙级</option>
+                  <option value="AAA">AAA</option>
+                  <option value="AAAA">AAAA</option>
+                  <option value="AAAAA">AAAAA</option>
+                  <option value="CS1">CS1</option>
+                  <option value="CS2">CS2</option>
+                  <option value="CS3">CS3</option>
+                  <option value="CS4">CS4</option>
+                  <option value="CS5">CS5</option>
+                  <option value="一星级">一星级</option>
+                  <option value="二星级">二星级</option>
+                  <option value="三星级">三星级</option>
+                  <option value="四星级">四星级</option>
+                  <option value="五星级">五星级</option>
+                  <option value="六星级">六星级</option>
+                  <option value="七星级">七星级</option>
+                  <option value="八星级">八星级</option>
+                  <option value="九星级">九星级</option>
+                  <option value="十星级">十星级</option>
+                  <option value="十一星级">十一星级</option>
+                  <option value="十二星级">十二星级</option>
+                </select>
                 资质状态
                 <select
                   value={statusFilter}
@@ -195,7 +249,7 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
                 </select>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex justify-end gap-2">
                 <button
                   onClick={handleReset}
                   className="px-4 py-1.5 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 transition-colors"

@@ -82,9 +82,49 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
   onConfirm
 }) => {
   const normalizeData = (data: any): ParsedData => {
+    const normalizedBasicInfo = {
+      projectInfo: {
+        projectName: data?.basicInfo?.projectInfo?.projectName || '',
+        projectNumber: data?.basicInfo?.projectInfo?.projectNumber || '',
+        packageName: data?.basicInfo?.projectInfo?.packageName || '',
+        packageNumber: data?.basicInfo?.projectInfo?.packageNumber || '',
+        lotName: data?.basicInfo?.projectInfo?.lotName || '',
+        lotNumber: data?.basicInfo?.projectInfo?.lotNumber || '',
+        projectOverview: data?.basicInfo?.projectInfo?.projectOverview || '',
+        budgetAmount: data?.basicInfo?.projectInfo?.budgetAmount || '',
+        allowConsortium: data?.basicInfo?.projectInfo?.allowConsortium || ''
+      },
+      tenderer: {
+        name: data?.basicInfo?.tenderer?.name || '',
+        contact: data?.basicInfo?.tenderer?.contact || '',
+        email: data?.basicInfo?.tenderer?.email || '',
+        address: data?.basicInfo?.tenderer?.address || '',
+        zipCode: data?.basicInfo?.tenderer?.zipCode || ''
+      },
+      agent: {
+        name: data?.basicInfo?.agent?.name || '',
+        contact: data?.basicInfo?.agent?.contact || '',
+        email: data?.basicInfo?.agent?.email || '',
+        address: data?.basicInfo?.agent?.address || '',
+        zipCode: data?.basicInfo?.agent?.zipCode || ''
+      },
+      keyTimeline: {
+        bidDeadline: data?.basicInfo?.keyTimeline?.bidDeadline || '',
+        submissionMethod: data?.basicInfo?.keyTimeline?.submissionMethod || '',
+        openingTime: data?.basicInfo?.keyTimeline?.openingTime || '',
+        openingLocation: data?.basicInfo?.keyTimeline?.openingLocation || ''
+      },
+      bidBond: {
+        submissionMethod: data?.basicInfo?.bidBond?.submissionMethod || '',
+        amount: data?.basicInfo?.bidBond?.amount || '',
+        refundPolicy: data?.basicInfo?.bidBond?.refundPolicy || ''
+      }
+    };
+
     if (!data.documentDirectory) {
       return {
         ...data,
+        basicInfo: normalizedBasicInfo,
         documentDirectory: {
           summary: '请手动录入投标文件目录。',
           files: [
@@ -98,7 +138,10 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
     }
 
     if (data.documentDirectory.files) {
-      return data;
+      return {
+        ...data,
+        basicInfo: normalizedBasicInfo
+      };
     }
 
     const oldCommercial = data.documentDirectory.commercial || '';
@@ -135,6 +178,7 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
 
     return {
       ...data,
+      basicInfo: normalizedBasicInfo,
       documentDirectory: {
         summary: '本次投标需要提交商务文件和技术文件。',
         files
@@ -142,12 +186,18 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
     };
   };
 
-  const [data, setData] = useState<ParsedData>(normalizeData(initialData));
+  const normalizedInitialData = normalizeData(initialData);
+
+  const [data, setData] = useState<ParsedData>(normalizedInitialData);
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const [activeCategory, setActiveCategory] = useState('basicInfo');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmedPages, setConfirmedPages] = useState<Set<string>>(new Set());
+
+  console.log('BiddingProjectReview - initialData:', initialData);
+  console.log('BiddingProjectReview - normalizedInitialData:', normalizedInitialData);
+  console.log('BiddingProjectReview - data.basicInfo.projectInfo:', data.basicInfo.projectInfo);
 
   const categories = [
     { id: 'basicInfo', label: '基础信息', icon: FileText },
@@ -444,27 +494,7 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
         </div>
       )}
 
-      {renderSection('招标人信息', 'tenderer', (
-        <>
-          {renderField('招标人名称', data.basicInfo.tenderer.name, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, tenderer: { ...data.basicInfo.tenderer, name: val } } }), 'tenderer')}
-          {renderField('联系方式', data.basicInfo.tenderer.contact, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, tenderer: { ...data.basicInfo.tenderer, contact: val } } }), 'tenderer')}
-          {renderField('邮件', data.basicInfo.tenderer.email, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, tenderer: { ...data.basicInfo.tenderer, email: val } } }), 'tenderer')}
-          {renderField('地址', data.basicInfo.tenderer.address, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, tenderer: { ...data.basicInfo.tenderer, address: val } } }), 'tenderer')}
-          {renderField('邮编', data.basicInfo.tenderer.zipCode, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, tenderer: { ...data.basicInfo.tenderer, zipCode: val } } }), 'tenderer')}
-        </>
-      ))}
-
-      {renderSection('代理机构信息', 'agent', (
-        <>
-          {renderField('代理机构名称', data.basicInfo.agent.name, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, agent: { ...data.basicInfo.agent, name: val } } }), 'agent')}
-          {renderField('联系方式', data.basicInfo.agent.contact, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, agent: { ...data.basicInfo.agent, contact: val } } }), 'agent')}
-          {renderField('邮件', data.basicInfo.agent.email, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, agent: { ...data.basicInfo.agent, email: val } } }), 'agent')}
-          {renderField('地址', data.basicInfo.agent.address, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, agent: { ...data.basicInfo.agent, address: val } } }), 'agent')}
-          {renderField('邮编', data.basicInfo.agent.zipCode, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, agent: { ...data.basicInfo.agent, zipCode: val } } }), 'agent')}
-        </>
-      ))}
-
-      {renderSection('项目信息', 'projectInfo', (
+      {renderSection('1. 项目信息', 'projectInfo', (
         <>
           {renderField('项目名称', data.basicInfo.projectInfo.projectName, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, projectInfo: { ...data.basicInfo.projectInfo, projectName: val } } }), 'projectInfo')}
           {renderField('项目编号', data.basicInfo.projectInfo.projectNumber, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, projectInfo: { ...data.basicInfo.projectInfo, projectNumber: val } } }), 'projectInfo')}
@@ -478,7 +508,27 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
         </>
       ))}
 
-      {renderSection('关键时间点及内容', 'keyTimeline', (
+      {renderSection('2. 招标人信息', 'tenderer', (
+        <>
+          {renderField('招标人名称', data.basicInfo.tenderer.name, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, tenderer: { ...data.basicInfo.tenderer, name: val } } }), 'tenderer')}
+          {renderField('联系方式', data.basicInfo.tenderer.contact, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, tenderer: { ...data.basicInfo.tenderer, contact: val } } }), 'tenderer')}
+          {renderField('邮件', data.basicInfo.tenderer.email, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, tenderer: { ...data.basicInfo.tenderer, email: val } } }), 'tenderer')}
+          {renderField('地址', data.basicInfo.tenderer.address, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, tenderer: { ...data.basicInfo.tenderer, address: val } } }), 'tenderer')}
+          {renderField('邮编', data.basicInfo.tenderer.zipCode, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, tenderer: { ...data.basicInfo.tenderer, zipCode: val } } }), 'tenderer')}
+        </>
+      ))}
+
+      {renderSection('3. 代理机构信息', 'agent', (
+        <>
+          {renderField('代理机构名称', data.basicInfo.agent.name, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, agent: { ...data.basicInfo.agent, name: val } } }), 'agent')}
+          {renderField('联系方式', data.basicInfo.agent.contact, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, agent: { ...data.basicInfo.agent, contact: val } } }), 'agent')}
+          {renderField('邮件', data.basicInfo.agent.email, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, agent: { ...data.basicInfo.agent, email: val } } }), 'agent')}
+          {renderField('地址', data.basicInfo.agent.address, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, agent: { ...data.basicInfo.agent, address: val } } }), 'agent')}
+          {renderField('邮编', data.basicInfo.agent.zipCode, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, agent: { ...data.basicInfo.agent, zipCode: val } } }), 'agent')}
+        </>
+      ))}
+
+      {renderSection('4. 关键时间点及内容', 'keyTimeline', (
         <>
           {renderField('投标截止时间', data.basicInfo.keyTimeline.bidDeadline, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, keyTimeline: { ...data.basicInfo.keyTimeline, bidDeadline: val } } }), 'keyTimeline')}
           {renderField('投标文件递交方式', data.basicInfo.keyTimeline.submissionMethod, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, keyTimeline: { ...data.basicInfo.keyTimeline, submissionMethod: val } } }), 'keyTimeline')}
@@ -487,7 +537,7 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
         </>
       ))}
 
-      {renderSection('投标保证金', 'bidBond', (
+      {renderSection('5. 投标保证金', 'bidBond', (
         <>
           {renderField('递交方式', data.basicInfo.bidBond.submissionMethod, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, bidBond: { ...data.basicInfo.bidBond, submissionMethod: val } } }), 'bidBond')}
           {renderField('金额', data.basicInfo.bidBond.amount, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, bidBond: { ...data.basicInfo.bidBond, amount: val } } }), 'bidBond')}
