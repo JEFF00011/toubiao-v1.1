@@ -11,13 +11,18 @@ const Navigation: React.FC<NavigationProps> = ({ username = '管理员', role = 
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showNotificationDetail, setShowNotificationDetail] = useState(false);
+  const [showAllNotifications, setShowAllNotifications] = useState(false);
+  const [selectedNotification, setSelectedNotification] = useState<any>(null);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const notifications = [
-    { id: 1, type: 'warning', title: '证书即将过期', message: '企业资质证书将于7天后过期，请及时更新', time: '2小时前' },
-    { id: 2, type: 'warning', title: '投标保证金到期提醒', message: '某医院项目保证金将于3天后到期', time: '5小时前' },
+    { id: 1, type: 'warning', title: '证书即将过期', message: '企业资质证书将于7天后过期，请及时更新', time: '2小时前', detail: '您的企业资质证书（编号：ZZ202301001）将于2024年10月31日到期。为避免影响投标活动，请尽快准备相关材料进行续期。续期所需材料包括：营业执照副本、组织机构代码证、税务登记证等。' },
+    { id: 2, type: 'warning', title: '投标保证金到期提醒', message: '某医院项目保证金将于3天后到期', time: '5小时前', detail: '项目名称：某市人民医院医疗设备采购项目\n项目编号：BID2024001\n保证金金额：50,000元\n到期时间：2024年10月27日\n\n请及时办理保证金退还手续，如需延期请联系项目负责人。' },
+    { id: 3, type: 'info', title: '新项目发布', message: '某科技园智能化改造项目已发布', time: '1天前', detail: '项目名称：某科技园智能化改造项目\n发布单位：某科技园管理委员会\n预算金额：800万元\n报名截止：2024年11月5日\n开标时间：2024年11月10日\n\n项目包含视频监控系统、门禁系统、停车管理系统等智能化改造内容。' },
+    { id: 4, type: 'success', title: '中标通知', message: '恭喜！您已中标某学校项目', time: '2天前', detail: '项目名称：某中学智慧校园建设项目\n项目编号：BID2024005\n中标金额：320万元\n合同签订时间：2024年10月30日前\n\n请及时准备合同签订相关材料，并联系采购方确认具体签订时间和地点。' },
   ];
 
   const handleLogout = () => {
@@ -53,11 +58,26 @@ const Navigation: React.FC<NavigationProps> = ({ username = '管理员', role = 
 
   const handleViewAllNotifications = () => {
     setShowNotifications(false);
-    alert('查看全部通知功能');
+    setShowAllNotifications(true);
   };
 
   const handleNotificationClick = (notif: any) => {
-    alert(`通知详情：${notif.title}\n${notif.message}`);
+    setSelectedNotification(notif);
+    setShowNotifications(false);
+    setShowNotificationDetail(true);
+  };
+
+  const getNotificationIcon = (type: string) => {
+    switch (type) {
+      case 'warning':
+        return 'bg-orange-500';
+      case 'success':
+        return 'bg-green-500';
+      case 'info':
+        return 'bg-blue-500';
+      default:
+        return 'bg-neutral-500';
+    }
   };
 
   return (
@@ -115,9 +135,7 @@ const Navigation: React.FC<NavigationProps> = ({ username = '管理员', role = 
                           className="px-4 py-3 border-b border-neutral-100 hover:bg-neutral-50 transition-all duration-150 last:border-b-0 cursor-pointer"
                         >
                           <div className="flex items-start gap-3">
-                            <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-1.5 ${
-                              notif.type === 'warning' ? 'bg-orange-500' : 'bg-blue-500'
-                            }`}></div>
+                            <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-1.5 ${getNotificationIcon(notif.type)}`}></div>
                             <div className="flex-1 min-w-0">
                               <p className="font-medium text-neutral-900 text-sm leading-snug">{notif.title}</p>
                               <p className="text-xs text-neutral-600 mt-1 leading-relaxed">{notif.message}</p>
@@ -184,6 +202,114 @@ const Navigation: React.FC<NavigationProps> = ({ username = '管理员', role = 
           </div>
         </div>
       </div>
+
+      {/* Notification Detail Modal */}
+      {showNotificationDetail && selectedNotification && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg mx-4">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200">
+              <div className="flex items-center gap-3">
+                <div className={`w-3 h-3 rounded-full ${getNotificationIcon(selectedNotification.type)}`}></div>
+                <h3 className="text-lg font-semibold text-neutral-900">{selectedNotification.title}</h3>
+              </div>
+              <button
+                onClick={() => {
+                  setShowNotificationDetail(false);
+                  setSelectedNotification(null);
+                }}
+                className="text-neutral-400 hover:text-neutral-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-sm text-neutral-600 leading-relaxed whitespace-pre-line">
+                {selectedNotification.detail}
+              </p>
+              <div className="mt-4 pt-4 border-t border-neutral-200">
+                <p className="text-xs text-neutral-400">{selectedNotification.time}</p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-neutral-200 bg-neutral-50 rounded-b-xl">
+              <button
+                onClick={() => {
+                  setShowNotificationDetail(false);
+                  setSelectedNotification(null);
+                }}
+                className="px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-200 rounded-lg transition-colors"
+              >
+                关闭
+              </button>
+              <button
+                onClick={() => {
+                  alert('标记为已读');
+                  setShowNotificationDetail(false);
+                  setSelectedNotification(null);
+                }}
+                className="px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+              >
+                标记为已读
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* All Notifications Modal */}
+      {showAllNotifications && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200">
+              <h3 className="text-lg font-semibold text-neutral-900">全部通知</h3>
+              <button
+                onClick={() => setShowAllNotifications(false)}
+                className="text-neutral-400 hover:text-neutral-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="space-y-3">
+                {notifications.map(notif => (
+                  <div
+                    key={notif.id}
+                    onClick={() => {
+                      setShowAllNotifications(false);
+                      handleNotificationClick(notif);
+                    }}
+                    className="p-4 border border-neutral-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-all duration-150 cursor-pointer"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`flex-shrink-0 w-3 h-3 rounded-full mt-1 ${getNotificationIcon(notif.type)}`}></div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="font-medium text-neutral-900">{notif.title}</p>
+                          <span className="text-xs text-neutral-400 ml-4">{notif.time}</span>
+                        </div>
+                        <p className="text-sm text-neutral-600 leading-relaxed">{notif.message}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-between items-center px-6 py-4 border-t border-neutral-200 bg-neutral-50 rounded-b-xl">
+              <button
+                onClick={() => alert('全部标记为已读')}
+                className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
+              >
+                全部标记为已读
+              </button>
+              <button
+                onClick={() => setShowAllNotifications(false)}
+                className="px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+              >
+                关闭
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Change Password Modal */}
       {showChangePassword && (
