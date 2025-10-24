@@ -51,6 +51,15 @@ const Navigation: React.FC<NavigationProps> = ({ username = '管理员', role = 
     setConfirmPassword('');
   };
 
+  const handleViewAllNotifications = () => {
+    setShowNotifications(false);
+    alert('查看全部通知功能');
+  };
+
+  const handleNotificationClick = (notif: any) => {
+    alert(`通知详情：${notif.title}\n${notif.message}`);
+  };
+
   return (
     <nav className="h-16 flex-shrink-0 bg-white border-b border-neutral-200 z-50">
       <div className="h-full px-6 flex items-center">
@@ -102,7 +111,8 @@ const Navigation: React.FC<NavigationProps> = ({ username = '管理员', role = 
                       notifications.map(notif => (
                         <div
                           key={notif.id}
-                          className="p-4 border-b border-neutral-100 hover:bg-neutral-50 transition-colors last:border-b-0"
+                          onClick={() => handleNotificationClick(notif)}
+                          className="p-4 border-b border-neutral-100 hover:bg-neutral-50 transition-colors last:border-b-0 cursor-pointer"
                         >
                           <div className="flex items-start">
                             <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 mr-3 ${
@@ -119,7 +129,10 @@ const Navigation: React.FC<NavigationProps> = ({ username = '管理员', role = 
                     )}
                   </div>
                   <div className="p-3 border-t border-neutral-200 text-center">
-                    <button className="text-sm text-primary-600 hover:text-primary-700">
+                    <button
+                      onClick={handleViewAllNotifications}
+                      className="text-sm text-primary-600 hover:text-primary-700 transition-colors"
+                    >
                       查看全部通知
                     </button>
                   </div>
