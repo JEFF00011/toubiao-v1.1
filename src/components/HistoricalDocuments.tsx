@@ -7,6 +7,7 @@ interface HistoricalDocument {
   fileType: string;
   fileDescription: string;
   attachments: { url: string; name: string; size: number }[];
+  createdAt?: string;
 }
 
 interface HistoricalDocumentsProps {
@@ -77,7 +78,8 @@ const HistoricalDocuments: React.FC<HistoricalDocumentsProps> = ({ companyId, re
     if (editingItem) {
       const newItem: HistoricalDocument = {
         ...editingItem,
-        id: String(Date.now())
+        id: String(Date.now()),
+        createdAt: new Date().toISOString()
       };
       setItems([...items, newItem]);
       setShowAddModal(false);
@@ -127,7 +129,11 @@ const HistoricalDocuments: React.FC<HistoricalDocumentsProps> = ({ companyId, re
     !searchTerm ||
     item.fileName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     item.fileType.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ).sort((a, b) => {
+    const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return bTime - aTime;
+  });
 
   const paginatedItems = () => {
     const startIndex = (currentPage - 1) * itemsPerPage;

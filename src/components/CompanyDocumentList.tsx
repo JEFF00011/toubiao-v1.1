@@ -80,9 +80,11 @@ const CompanyDocumentList: React.FC<CompanyDocumentListProps> = ({ title, catego
     setShowDeleteModal(false);
   };
 
-  const filteredItems = items.filter(item =>
-    !searchTerm || item.fileName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredItems = items
+    .filter(item =>
+      !searchTerm || item.fileName.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => new Date(b.uploadDate).getTime() - new Date(a.uploadDate).getTime());
 
   return (
     <div className="flex flex-col h-full">

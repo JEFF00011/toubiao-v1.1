@@ -54,6 +54,8 @@ interface KnowledgeItem {
   qualificationCount?: number;
   isLegalPerson?: boolean;
   isAuthorizedDelegate?: boolean;
+  uploadTime?: string;
+  signYear?: string;
 }
 
 interface FilterConfig {
@@ -91,6 +93,8 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const [categoryFilters, setCategoryFilters] = useState<{ [key: string]: { [key: string]: string } }>({});
   const [categorySearches, setCategorySearches] = useState<{ [key: string]: { [key: string]: string } }>({});
   const [activeKnowledgeTab, setActiveKnowledgeTab] = useState('company');
+  const [activeProductTab, setActiveProductTab] = useState<'productionEquipment' | 'testingEquipment' | 'companyProducts'>('productionEquipment');
+  const [activePersonnelTab, setActivePersonnelTab] = useState<'legalPerson' | 'authorizedDelegate' | 'otherPersonnel'>('legalPerson');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
@@ -178,15 +182,15 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       id: 'qualification',
       name: '资质信息',
       items: [
-        { id: 'qual_1', name: '软件企业认定证书', certNumber: 'CERT-2024-001', rating: '甲级', status: 'valid', selected: true },
-        { id: 'qual_2', name: 'ISO9001质量管理体系认证', certNumber: 'ISO-2024-002', rating: '无', status: 'valid', selected: true },
-        { id: 'qual_3', name: '信息安全等保三级证书', certNumber: 'SEC-2024-003', rating: '三级', status: 'valid', selected: false },
-        { id: 'qual_4', name: 'CMMI认证证书', certNumber: 'CMMI-2023-004', rating: '三级', status: 'expired', selected: false },
-        { id: 'qual_5', name: '高新技术企业证书', certNumber: 'HIGH-2024-005', rating: '无', status: 'valid', selected: true },
-        { id: 'qual_6', name: '建筑业企业资质证书', certNumber: 'BUILD-2024-006', rating: '乙级', status: 'valid', selected: false }
+        { id: 'qual_1', name: '软件企业认定证书', certNumber: 'CERT-2024-001', rating: '甲级', status: 'valid', uploadTime: '2024-10-20', selected: true },
+        { id: 'qual_2', name: 'ISO9001质量管理体系认证', certNumber: 'ISO-2024-002', rating: '无', status: 'valid', uploadTime: '2024-10-18', selected: true },
+        { id: 'qual_3', name: '信息安全等保三级证书', certNumber: 'SEC-2024-003', rating: '三级', status: 'valid', uploadTime: '2024-10-15', selected: false },
+        { id: 'qual_4', name: 'CMMI认证证书', certNumber: 'CMMI-2023-004', rating: '三级', status: 'expired', uploadTime: '2024-09-10', selected: false },
+        { id: 'qual_5', name: '高新技术企业证书', certNumber: 'HIGH-2024-005', rating: '无', status: 'valid', uploadTime: '2024-08-25', selected: true },
+        { id: 'qual_6', name: '建筑业企业资质证书', certNumber: 'BUILD-2024-006', rating: '乙级', status: 'valid', uploadTime: '2024-07-12', selected: false }
       ],
       filters: {
-        rating: ['甲级', '乙级', '三级', '无'],
+        rating: ['无', '特级', '一级', '二级', '三级', '四级', '五级', '甲级', '乙级', '丙级', 'AAA', 'AAAA', 'AAAAA', 'CS1', 'CS2', 'CS3', 'CS4', 'CS5', '一星级', '二星级', '三星级', '四星级', '五星级', '六星级', '七星级', '八星级', '九星级', '十星级', '十一星级', '十二星级'],
         status: ['valid', 'expired']
       }
     },
@@ -194,12 +198,12 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       id: 'financial',
       name: '财务信息',
       items: [
-        { id: 'fin_1', name: '2024年度财务审计报告', year: '2024', selected: true },
-        { id: 'fin_2', name: '2023年度财务审计报告', year: '2023', selected: false },
-        { id: 'fin_3', name: '2022年度财务审计报告', year: '2022', selected: false },
         { id: 'fin_4', name: '2024年资产负债表', year: '2024', selected: true },
         { id: 'fin_5', name: '2024年利润表', year: '2024', selected: false },
-        { id: 'fin_6', name: '纳税证明', year: '2024', selected: true }
+        { id: 'fin_6', name: '纳税证明', year: '2024', selected: true },
+        { id: 'fin_1', name: '2024年度财务审计报告', year: '2024', selected: true },
+        { id: 'fin_2', name: '2023年度财务审计报告', year: '2023', selected: false },
+        { id: 'fin_3', name: '2022年度财务审计报告', year: '2022', selected: false }
       ],
       filters: {
         year: ['2024', '2023', '2022', '2021']
@@ -209,22 +213,43 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       id: 'performance',
       name: '业绩信息',
       items: [
-        { id: 'perf_1', projectName: '智慧城市建设项目', clientName: '北京市政府', contractNumber: 'CT-2024-001', selected: true },
-        { id: 'perf_2', projectName: '教育信息化平台', clientName: '教育部', contractNumber: 'CT-2024-002', selected: true },
-        { id: 'perf_3', projectName: '政务服务平台', clientName: '上海市政府', contractNumber: 'CT-2023-003', selected: false },
-        { id: 'perf_4', projectName: '医疗信息系统', clientName: '华山医院', contractNumber: 'CT-2023-004', selected: false },
-        { id: 'perf_5', projectName: '企业ERP系统', clientName: '万科集团', contractNumber: 'CT-2022-005', selected: false }
+        { id: 'perf_1', name: '智慧城市建设项目', projectName: '智慧城市建设项目', clientName: '北京市政府', contractNumber: 'CT-2024-001', signYear: '2024', selected: true },
+        { id: 'perf_2', name: '教育信息化平台', projectName: '教育信息化平台', clientName: '教育部', contractNumber: 'CT-2024-002', signYear: '2024', selected: true },
+        { id: 'perf_3', name: '政务服务平台', projectName: '政务服务平台', clientName: '上海市政府', contractNumber: 'CT-2023-003', signYear: '2023', selected: false },
+        { id: 'perf_4', name: '医疗信息系统', projectName: '医疗信息系统', clientName: '华山医院', contractNumber: 'CT-2023-004', signYear: '2023', selected: false },
+        { id: 'perf_5', name: '企业ERP系统', projectName: '企业ERP系统', clientName: '万科集团', contractNumber: 'CT-2022-005', signYear: '2022', selected: false }
       ]
     },
     {
-      id: 'personnel',
-      name: '人员信息',
+      id: 'legalPerson',
+      name: '人员信息 - 法人',
       items: [
-        { id: 'per_1', name: '张三', position: '项目经理', status: 'active', selected: true },
-        { id: 'per_2', name: '李四', position: '技术总监', status: 'active', selected: true },
-        { id: 'per_3', name: '王五', position: '项目经理', status: 'active', selected: false },
-        { id: 'per_4', name: '赵六', position: '架构师', status: 'active', selected: false },
-        { id: 'per_5', name: '孙七', position: '开发经理', status: 'resigned', selected: false }
+        { id: 'legal_1', name: '王建国', position: '法定代表人', status: 'active', uploadTime: '2024-10-20', isLegalPerson: true, selected: true }
+      ],
+      filters: {
+        status: ['active', 'resigned']
+      }
+    },
+    {
+      id: 'authorizedDelegate',
+      name: '人员信息 - 授权委托人',
+      items: [
+        { id: 'auth_1', name: '李明', position: '授权委托人', status: 'active', uploadTime: '2024-10-22', isAuthorizedDelegate: true, selected: true },
+        { id: 'auth_2', name: '陈晨', position: '授权委托人', status: 'active', uploadTime: '2024-10-18', isAuthorizedDelegate: true, selected: false }
+      ],
+      filters: {
+        status: ['active', 'resigned']
+      }
+    },
+    {
+      id: 'otherPersonnel',
+      name: '人员信息 - 其他人员',
+      items: [
+        { id: 'per_1', name: '张三', position: '项目经理', status: 'active', uploadTime: '2024-10-22', selected: true },
+        { id: 'per_2', name: '李四', position: '技术总监', status: 'active', uploadTime: '2024-10-20', selected: true },
+        { id: 'per_3', name: '王五', position: '项目经理', status: 'active', uploadTime: '2024-10-15', selected: false },
+        { id: 'per_4', name: '赵六', position: '架构师', status: 'active', uploadTime: '2024-09-28', selected: false },
+        { id: 'per_5', name: '孙七', position: '开发经理', status: 'resigned', uploadTime: '2024-08-10', selected: false }
       ],
       filters: {
         position: ['项目经理', '技术总监', '架构师', '开发经理'],
@@ -232,15 +257,36 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       }
     },
     {
-      id: 'product',
-      name: '产品信息',
+      id: 'productionEquipment',
+      name: '产品信息 - 生产设备',
       items: [
-        { id: 'prod_1', name: '企业级路由器 ER8300G', productCategory: '网络设备', productBrand: '华为', productSpec: '企业级', productModel: 'ER8300G', selected: true },
-        { id: 'prod_2', name: '高性能交换机 S5720-SI', productCategory: '网络设备', productBrand: '华为', productSpec: '千兆24口', productModel: 'S5720-28P-SI', selected: true },
-        { id: 'prod_3', name: 'ThinkCentre M920t 台式机', productCategory: '计算机设备', productBrand: '联想', productSpec: 'i7/16G/512G', productModel: 'M920t', selected: false },
-        { id: 'prod_4', name: 'ThinkPad X1 Carbon 笔记本', productCategory: '计算机设备', productBrand: '联想', productSpec: 'i7/16G/1T', productModel: 'X1 Carbon Gen 11', selected: false },
-        { id: 'prod_5', name: 'Dell PowerEdge R740 服务器', productCategory: '服务器', productBrand: 'Dell', productSpec: '2U机架式', productModel: 'R740', selected: true },
-        { id: 'prod_6', name: '惠普LaserJet Pro M428 打印机', productCategory: '办公设备', productBrand: '惠普', productSpec: '激光多功能一体机', productModel: 'M428fdw', selected: false }
+        { id: 'prod_1', name: '数控机床 CNC-5000', productCategory: '加工设备', productBrand: '某某机械', productSpec: '五轴联动', productModel: 'CNC-5000', selected: true },
+        { id: 'prod_2', name: '注塑机 INJ-800T', productCategory: '成型设备', productBrand: '某某塑机', productSpec: '800吨锁模力', productModel: 'INJ-800T', selected: false },
+        { id: 'prod_3', name: '激光切割机 LC-3015', productCategory: '切割设备', productBrand: '某某激光', productSpec: '3000W', productModel: 'LC-3015', selected: true }
+      ],
+      filters: {
+        productCategory: ['加工设备', '成型设备', '切割设备', '焊接设备']
+      }
+    },
+    {
+      id: 'testingEquipment',
+      name: '产品信息 - 检测设备',
+      items: [
+        { id: 'test_1', name: '三坐标测量仪 CMM-7106', productCategory: '精密测量', productBrand: '某某测量', productSpec: '700x1000x600mm', productModel: 'CMM-7106', selected: true },
+        { id: 'test_2', name: '硬度计 HR-150A', productCategory: '硬度检测', productBrand: '某某仪器', productSpec: '洛氏硬度', productModel: 'HR-150A', selected: false },
+        { id: 'test_3', name: '光谱仪 OES-2000', productCategory: '成分分析', productBrand: '某某光学', productSpec: '全谱直读', productModel: 'OES-2000', selected: true }
+      ],
+      filters: {
+        productCategory: ['精密测量', '硬度检测', '成分分析', '无损检测']
+      }
+    },
+    {
+      id: 'companyProducts',
+      name: '产品信息 - 企业产品',
+      items: [
+        { id: 'cprod_1', name: '企业级路由器 ER8300G', productCategory: '网络设备', productBrand: '华为', productSpec: '企业级', productModel: 'ER8300G', selected: true },
+        { id: 'cprod_2', name: '高性能交换机 S5720-SI', productCategory: '网络设备', productBrand: '华为', productSpec: '千兆24口', productModel: 'S5720-28P-SI', selected: true },
+        { id: 'cprod_3', name: 'Dell PowerEdge R740 服务器', productCategory: '服务器', productBrand: 'Dell', productSpec: '2U机架式', productModel: 'R740', selected: true }
       ],
       filters: {
         productCategory: ['网络设备', '计算机设备', '服务器', '办公设备']
@@ -250,11 +296,11 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       id: 'templates',
       name: '历史投标文件',
       items: [
-        { id: 'temp_1', name: '类似项目投标文件模板', selected: true },
-        { id: 'temp_2', name: '技术方案参考文档', selected: true },
-        { id: 'temp_3', name: '售后服务方案模板', selected: false },
-        { id: 'temp_4', name: '项目实施计划模板', selected: false },
-        { id: 'temp_5', name: '培训方案模板', selected: false }
+        { id: 'temp_1', name: '类似项目投标文件模板', uploadTime: '2024-10-21', selected: true },
+        { id: 'temp_2', name: '技术方案参考文档', uploadTime: '2024-10-18', selected: true },
+        { id: 'temp_3', name: '售后服务方案模板', uploadTime: '2024-10-12', selected: false },
+        { id: 'temp_4', name: '项目实施计划模板', uploadTime: '2024-09-25', selected: false },
+        { id: 'temp_5', name: '培训方案模板', uploadTime: '2024-09-10', selected: false }
       ]
     }
   ];
@@ -840,7 +886,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     const filters = categoryFilters[category.id] || {};
     const searches = categorySearches[category.id] || {};
 
-    return category.items.filter(item => {
+    let filteredItems = category.items.filter(item => {
       if (filters.year && item.year && item.year !== filters.year) return false;
       if (filters.rating && item.rating && item.rating !== filters.rating) return false;
       if (filters.status && item.status && item.status !== filters.status) return false;
@@ -876,11 +922,11 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         if (searches.productQuantity && !item.productQuantity?.toLowerCase().includes(searches.productQuantity.toLowerCase())) return false;
       }
 
-      if (category.id === 'personnel') {
+      if (category.id === 'legalPerson' || category.id === 'authorizedDelegate' || category.id === 'otherPersonnel') {
         if (searches.name && !item.name?.toLowerCase().includes(searches.name.toLowerCase())) return false;
       }
 
-      if (category.id === 'product') {
+      if (category.id === 'productionEquipment' || category.id === 'testingEquipment' || category.id === 'companyProducts') {
         if (searches.name && !item.name?.toLowerCase().includes(searches.name.toLowerCase())) return false;
         if (searches.productBrand && !item.productBrand?.toLowerCase().includes(searches.productBrand.toLowerCase())) return false;
         if (searches.productSpec && !item.productSpec?.toLowerCase().includes(searches.productSpec.toLowerCase())) return false;
@@ -893,6 +939,43 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
       return true;
     });
+
+    if (category.id === 'qualification' && filteredItems.length > 0) {
+      filteredItems = filteredItems.sort((a, b) => {
+        if (!a.uploadTime || !b.uploadTime) return 0;
+        return new Date(b.uploadTime).getTime() - new Date(a.uploadTime).getTime();
+      });
+    }
+
+    if (category.id === 'financial' && filteredItems.length > 0) {
+      filteredItems = filteredItems.sort((a, b) => {
+        if (!a.year || !b.year) return 0;
+        return parseInt(b.year) - parseInt(a.year);
+      });
+    }
+
+    if (category.id === 'performance' && filteredItems.length > 0) {
+      filteredItems = filteredItems.sort((a, b) => {
+        if (!a.signYear || !b.signYear) return 0;
+        return parseInt(b.signYear) - parseInt(a.signYear);
+      });
+    }
+
+    if ((category.id === 'legalPerson' || category.id === 'authorizedDelegate' || category.id === 'otherPersonnel') && filteredItems.length > 0) {
+      filteredItems = filteredItems.sort((a, b) => {
+        if (!a.uploadTime || !b.uploadTime) return 0;
+        return new Date(b.uploadTime).getTime() - new Date(a.uploadTime).getTime();
+      });
+    }
+
+    if (category.id === 'templates' && filteredItems.length > 0) {
+      filteredItems = filteredItems.sort((a, b) => {
+        if (!a.uploadTime || !b.uploadTime) return 0;
+        return new Date(b.uploadTime).getTime() - new Date(a.uploadTime).getTime();
+      });
+    }
+
+    return filteredItems;
   };
 
   const renderSearchFields = (category: KnowledgeCategory) => {
@@ -1056,7 +1139,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       );
     }
 
-    if (category.id === 'personnel') {
+    if (category.id === 'legalPerson' || category.id === 'authorizedDelegate' || category.id === 'otherPersonnel') {
       return (
         <div className="flex items-center gap-2 flex-wrap">
           <input
@@ -1096,7 +1179,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       );
     }
 
-    if (category.id === 'product') {
+    if (category.id === 'productionEquipment' || category.id === 'testingEquipment' || category.id === 'companyProducts') {
       return (
         <div className="flex items-center gap-2 flex-wrap">
           <input
@@ -1209,7 +1292,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       );
     }
 
-    if (category.id === 'personnel') {
+    if (category.id === 'legalPerson' || category.id === 'authorizedDelegate' || category.id === 'otherPersonnel') {
       return (
         <div className="ml-3 flex-1">
           <div className="flex items-center justify-between">
@@ -1227,7 +1310,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       );
     }
 
-    if (category.id === 'product') {
+    if (category.id === 'productionEquipment' || category.id === 'testingEquipment' || category.id === 'companyProducts') {
       return (
         <div className="ml-3 flex-1">
           <div className="flex items-center justify-between">
@@ -1246,11 +1329,33 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   };
 
   const renderStep5 = () => {
-    const activeCategory = knowledgeCategories.find(cat => cat.id === activeKnowledgeTab);
+    const productCategories = ['productionEquipment', 'testingEquipment', 'companyProducts'];
+    const personnelCategories = ['legalPerson', 'authorizedDelegate', 'otherPersonnel'];
+    const isProductTab = activeKnowledgeTab === 'product';
+    const isPersonnelTab = activeKnowledgeTab === 'personnel';
+
+    const activeCategory = isProductTab
+      ? knowledgeCategories.find(cat => cat.id === activeProductTab)
+      : isPersonnelTab
+      ? knowledgeCategories.find(cat => cat.id === activePersonnelTab)
+      : knowledgeCategories.find(cat => cat.id === activeKnowledgeTab);
+
     if (!activeCategory) return null;
 
     const filteredItems = getFilteredItems(activeCategory);
     const selectedCount = filteredItems.filter(item => item.selected).length;
+
+    const displayCategories = knowledgeCategories.filter(cat => !productCategories.includes(cat.id) && !personnelCategories.includes(cat.id));
+    const categoriesBeforeProduct = displayCategories.filter(cat => cat.id !== 'templates');
+    const templatesCategory = displayCategories.find(cat => cat.id === 'templates');
+
+    const allProductCategories = knowledgeCategories.filter(cat => productCategories.includes(cat.id));
+    const totalProductSelected = allProductCategories.reduce((sum, cat) => sum + cat.items.filter(item => item.selected).length, 0);
+    const totalProductCount = allProductCategories.reduce((sum, cat) => sum + cat.items.length, 0);
+
+    const allPersonnelCategories = knowledgeCategories.filter(cat => personnelCategories.includes(cat.id));
+    const totalPersonnelSelected = allPersonnelCategories.reduce((sum, cat) => sum + cat.items.filter(item => item.selected).length, 0);
+    const totalPersonnelCount = allPersonnelCategories.reduce((sum, cat) => sum + cat.items.length, 0);
 
     return (
       <div className="max-w-4xl mx-auto">
@@ -1263,7 +1368,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
         <div className="border-b border-neutral-200 mb-4">
           <div className="flex space-x-1 overflow-x-auto">
-            {knowledgeCategories.map(category => {
+            {categoriesBeforeProduct.map(category => {
               const categorySelectedCount = category.items.filter(item => item.selected).length;
               const categoryTotalCount = category.items.length;
 
@@ -1290,8 +1395,154 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 </button>
               );
             })}
+            {allPersonnelCategories.length > 0 && (
+              <button
+                onClick={() => {
+                  setActiveKnowledgeTab('personnel');
+                }}
+                className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  isPersonnelTab
+                    ? 'border-primary-600 text-primary-600'
+                    : 'border-transparent text-neutral-600 hover:text-neutral-900 hover:border-neutral-300'
+                }`}
+              >
+                人员信息
+                {totalPersonnelSelected > 0 && (
+                  <span className={`ml-2 px-1.5 py-0.5 text-xs rounded ${
+                    isPersonnelTab
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'bg-neutral-100 text-neutral-600'
+                  }`}>
+                    {totalPersonnelSelected}/{totalPersonnelCount}
+                  </span>
+                )}
+              </button>
+            )}
+            {allProductCategories.length > 0 && (
+              <button
+                onClick={() => {
+                  setActiveKnowledgeTab('product');
+                }}
+                className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  isProductTab
+                    ? 'border-primary-600 text-primary-600'
+                    : 'border-transparent text-neutral-600 hover:text-neutral-900 hover:border-neutral-300'
+                }`}
+              >
+                产品信息
+                {totalProductSelected > 0 && (
+                  <span className={`ml-2 px-1.5 py-0.5 text-xs rounded ${
+                    isProductTab
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'bg-neutral-100 text-neutral-600'
+                  }`}>
+                    {totalProductSelected}/{totalProductCount}
+                  </span>
+                )}
+              </button>
+            )}
+            {templatesCategory && (
+              <button
+                key={templatesCategory.id}
+                onClick={() => setActiveKnowledgeTab(templatesCategory.id)}
+                className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                  activeKnowledgeTab === templatesCategory.id
+                    ? 'border-primary-600 text-primary-600'
+                    : 'border-transparent text-neutral-600 hover:text-neutral-900 hover:border-neutral-300'
+                }`}
+              >
+                {templatesCategory.name}
+                {templatesCategory.items.filter(item => item.selected).length > 0 && (
+                  <span className={`ml-2 px-1.5 py-0.5 text-xs rounded ${
+                    activeKnowledgeTab === templatesCategory.id
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'bg-neutral-100 text-neutral-600'
+                  }`}>
+                    {templatesCategory.items.filter(item => item.selected).length}/{templatesCategory.items.length}
+                  </span>
+                )}
+              </button>
+            )}
           </div>
         </div>
+
+        {isPersonnelTab && (
+          <div className="mb-4 border-b border-neutral-200">
+            <div className="flex space-x-2">
+              {allPersonnelCategories.map(category => {
+                const categorySelectedCount = category.items.filter(item => item.selected).length;
+                const categoryTotalCount = category.items.length;
+                const personnelTabNames = {
+                  legalPerson: '法人',
+                  authorizedDelegate: '授权委托人',
+                  otherPersonnel: '其他人员'
+                };
+
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => setActivePersonnelTab(category.id as any)}
+                    className={`px-4 py-2 text-sm font-medium transition-colors rounded-t ${
+                      activePersonnelTab === category.id
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                    }`}
+                  >
+                    {personnelTabNames[category.id as keyof typeof personnelTabNames]}
+                    {categorySelectedCount > 0 && (
+                      <span className={`ml-2 px-1.5 py-0.5 text-xs rounded ${
+                        activePersonnelTab === category.id
+                          ? 'bg-primary-700 text-white'
+                          : 'bg-neutral-200 text-neutral-700'
+                      }`}>
+                        {categorySelectedCount}/{categoryTotalCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {isProductTab && (
+          <div className="mb-4 border-b border-neutral-200">
+            <div className="flex space-x-2">
+              {allProductCategories.map(category => {
+                const categorySelectedCount = category.items.filter(item => item.selected).length;
+                const categoryTotalCount = category.items.length;
+                const productTabNames = {
+                  productionEquipment: '生产设备',
+                  testingEquipment: '检测设备',
+                  companyProducts: '企业产品'
+                };
+
+                return (
+                  <button
+                    key={category.id}
+                    onClick={() => setActiveProductTab(category.id as any)}
+                    className={`px-4 py-2 text-sm font-medium transition-colors rounded-t ${
+                      activeProductTab === category.id
+                        ? 'bg-primary-600 text-white'
+                        : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                    }`}
+                  >
+                    {productTabNames[category.id as keyof typeof productTabNames]}
+                    {categorySelectedCount > 0 && (
+                      <span className={`ml-2 px-1.5 py-0.5 text-xs rounded ${
+                        activeProductTab === category.id
+                          ? 'bg-primary-700 text-white'
+                          : 'bg-neutral-200 text-neutral-700'
+                      }`}>
+                        {categorySelectedCount}/{categoryTotalCount}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <div className="border border-neutral-200 rounded-lg overflow-hidden">
           <div className="bg-neutral-50 px-4 py-3 border-b border-neutral-200">
@@ -1480,6 +1731,11 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     }
   };
 
+  const totalSelectedFiles = knowledgeCategories.reduce(
+    (total, category) => total + category.items.filter(item => item.selected).length,
+    0
+  );
+
   return (
     <div className="flex flex-col h-full bg-white">
       <div className="border-b border-neutral-200 px-6 py-4 flex-shrink-0">
@@ -1487,12 +1743,21 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
           <h2 className="text-xl font-semibold text-neutral-900">
             {isViewMode ? '查看投标文件' : isEditMode ? '编辑投标文件' : '投标文件生成'}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-neutral-600 hover:text-neutral-900 transition-colors"
-          >
-            <X className="w-6 h-6" />
-          </button>
+          <div className="flex items-center space-x-4">
+            {selectedCompany && knowledgeCategories.length > 0 && (
+              <div className="flex items-center space-x-2 px-4 py-2 bg-primary-50 border border-primary-200 rounded-lg">
+                <Database className="w-4 h-4 text-primary-600" />
+                <span className="text-sm text-neutral-700">已选择企业知识库文件：</span>
+                <span className="text-sm font-semibold text-primary-700">{totalSelectedFiles}</span>
+              </div>
+            )}
+            <button
+              onClick={onClose}
+              className="text-neutral-600 hover:text-neutral-900 transition-colors"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
       </div>
 

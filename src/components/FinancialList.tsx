@@ -6,6 +6,7 @@ interface FinancialReport {
   reportName: string;
   year: string;
   attachments: { url: string; name: string; size: number }[];
+  createdAt?: string;
 }
 
 interface FinancialListProps {
@@ -23,7 +24,8 @@ const FinancialList: React.FC<FinancialListProps> = ({ companyId, readOnly = fal
       year: '2024',
       attachments: [
         { url: '', name: '2024财务报告.pdf', size: 2048576 }
-      ]
+      ],
+      createdAt: new Date().toISOString()
     }
     ];
   });
@@ -85,7 +87,8 @@ const FinancialList: React.FC<FinancialListProps> = ({ companyId, readOnly = fal
     if (editingItem) {
       const newItem: FinancialReport = {
         ...editingItem,
-        id: String(Date.now())
+        id: String(Date.now()),
+        createdAt: new Date().toISOString()
       };
       setItems([...items, newItem]);
       setShowAddModal(false);
@@ -134,7 +137,9 @@ const FinancialList: React.FC<FinancialListProps> = ({ companyId, readOnly = fal
       !searchYear || item.year === searchYear
     )
     .sort((a, b) => {
-      return parseInt(b.year) - parseInt(a.year);
+      const aYear = a.year ? parseInt(a.year) : 0;
+      const bYear = b.year ? parseInt(b.year) : 0;
+      return bYear - aYear;
     });
 
   const paginatedItems = () => {

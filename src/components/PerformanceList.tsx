@@ -31,6 +31,7 @@ interface PerformanceProject {
     clientProof: { url: string; name: string }[];
   };
   invoices: Invoice[];
+  createdAt?: string;
 }
 
 interface PerformanceListProps {
@@ -119,7 +120,8 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
     if (editingItem) {
       const newItem: PerformanceProject = {
         ...editingItem,
-        id: String(Date.now())
+        id: String(Date.now()),
+        createdAt: new Date().toISOString()
       };
       setItems([...items, newItem]);
       setShowAddModal(false);
@@ -228,6 +230,10 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
     }
 
     return matchesContract && matchesProject && matchesClient && matchesAmount;
+  }).sort((a, b) => {
+    const aYear = a.contractEffectiveDate ? parseInt(a.contractEffectiveDate.split('-')[0]) : 0;
+    const bYear = b.contractEffectiveDate ? parseInt(b.contractEffectiveDate.split('-')[0]) : 0;
+    return bYear - aYear;
   });
 
   const paginatedItems = () => {

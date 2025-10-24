@@ -23,6 +23,7 @@ interface Product {
   model: string;
   description: string;
   attachments: ProductAttachment[];
+  createdAt?: string;
 }
 
 interface CategoryData {
@@ -134,7 +135,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
     } else {
       categoryProducts.push({
         ...editingProduct,
-        id: Date.now().toString()
+        id: Date.now().toString(),
+        createdAt: new Date().toISOString()
       });
     }
 
@@ -330,6 +332,10 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
       const matchesModel = !searchModel || product.model.toLowerCase().includes(searchModel.toLowerCase());
       const matchesCategory = searchCategory === 'all' || product.categoryId === searchCategory;
       return matchesName && matchesBrand && matchesSpecification && matchesModel && matchesCategory;
+    }).sort((a, b) => {
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
     });
   };
 

@@ -12,6 +12,7 @@ interface Qualification {
   validUntil: string;
   isPermanent?: boolean;
   attachments: { url?: string; name: string; id?: string }[];
+  createdAt?: string;
 }
 
 interface QualificationListProps {
@@ -33,7 +34,8 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
         validFrom: '2024-01-01',
         validUntil: '2025-12-31',
         isPermanent: false,
-        attachments: [{ id: '1', url: 'https://via.placeholder.com/400x300/4F46E5/FFFFFF?text=ISO9001', name: 'ISO9001证书.pdf' }]
+        attachments: [{ id: '1', url: 'https://via.placeholder.com/400x300/4F46E5/FFFFFF?text=ISO9001', name: 'ISO9001证书.pdf' }],
+        createdAt: new Date().toISOString()
       }
     ];
   });
@@ -106,7 +108,8 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
     if (editingItem) {
       const newItem: Qualification = {
         ...editingItem,
-        id: String(Date.now())
+        id: String(Date.now()),
+        createdAt: new Date().toISOString()
       };
       setItems([...items, newItem]);
       setShowAddModal(false);
@@ -146,7 +149,9 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
       return matchesSearch && matchesCertNumber && matchesRating && matchesStatus;
     })
     .sort((a, b) => {
-      return new Date(b.validUntil).getTime() - new Date(a.validUntil).getTime();
+      const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return bTime - aTime;
     });
 
   const paginatedItems = () => {

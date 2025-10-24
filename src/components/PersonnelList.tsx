@@ -36,6 +36,7 @@ interface PersonnelItem {
   idCardBack: { url: string; name: string; size: number } | null;
   certificates: Certificate[];
   qualifications: Qualification[];
+  createdAt?: string;
 }
 
 interface PersonnelListProps {
@@ -81,7 +82,8 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
           validUntil: '2026-05-15',
           attachments: [{ url: '', name: '一建证书.pdf', size: 2048000 }]
         }
-      ]
+      ],
+      createdAt: new Date().toISOString()
     }
     ];
   });
@@ -187,7 +189,8 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
     if (editingItem) {
       const newItem: PersonnelItem = {
         ...editingItem,
-        id: String(Date.now())
+        id: String(Date.now()),
+        createdAt: new Date().toISOString()
       };
       setItems([...items, newItem]);
       setShowAddModal(false);
@@ -468,6 +471,10 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
     const totalQualifications = item.certificates.length + item.qualifications.length;
     const matchesQualificationCount = !searchQualificationCount || totalQualifications >= parseInt(searchQualificationCount);
     return matchesName && matchesStatus && matchesLegalPerson && matchesAuthorizedRep && matchesQualificationCount;
+  }).sort((a, b) => {
+    const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return bTime - aTime;
   });
 
   const paginatedItems = () => {
