@@ -201,8 +201,8 @@ const BidDocumentCheckCreate: React.FC<BidDocumentCheckCreateProps> = ({ onClose
           onClick={() => document.getElementById('file-upload')?.click()}
         >
           <Upload className="w-12 h-12 mx-auto text-neutral-400 mb-3" />
-          <p className="text-sm text-neutral-600 mb-1 font-medium">点击或拖拽文件到此处上传</p>
-          <p className="text-xs text-neutral-500">仅支持 PDF 格式</p>
+          <p className="text-sm text-neutral-600 mb-1 font-medium">点击上传</p>
+          <p className="text-xs text-neutral-500">或拖拽文件到此处（注：盖章项检查需上传pdf）</p>
           <input
             type="file"
             accept=".pdf"
