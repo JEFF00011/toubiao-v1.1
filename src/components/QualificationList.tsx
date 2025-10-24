@@ -10,7 +10,8 @@ interface Qualification {
   rating: string;
   validFrom?: string;
   validUntil: string;
-  attachments: { url: string; name: string }[];
+  isPermanent?: boolean;
+  attachments: { url?: string; name: string; id?: string }[];
 }
 
 interface QualificationListProps {
@@ -81,13 +82,17 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
       rating: '无',
       validFrom: '',
       validUntil: '',
+      isPermanent: false,
       attachments: []
     });
     setShowAddModal(true);
   };
 
   const handleEdit = (item: Qualification) => {
-    setEditingItem({ ...item });
+    setEditingItem({
+      ...item,
+      isPermanent: item.isPermanent || false
+    });
     setShowEditModal(true);
   };
 
