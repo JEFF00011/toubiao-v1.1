@@ -251,7 +251,15 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
     setShowConfirmModal(false);
   };
 
-  const renderField = (label: string, value: string, onChange: (val: string) => void, section: string, type: 'input' | 'textarea' = 'input') => {
+  const renderField = (
+    label: string,
+    value: string,
+    onChange: (val: string) => void,
+    section: string,
+    type: 'input' | 'textarea' = 'input',
+    canDelete: boolean = false,
+    onDelete?: () => void
+  ) => {
     const isEditing = editingSection === section;
     const calculateRows = (text: string) => {
       const lines = text.split('\n').length;
@@ -260,24 +268,35 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
     };
 
     return (
-      <div className="px-4 py-3 flex items-start">
+      <div className="px-4 py-3 flex items-start gap-2">
         <label className="w-32 text-sm font-medium text-neutral-600 flex-shrink-0">{label}</label>
         {isEditing ? (
-          type === 'textarea' ? (
-            <textarea
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              rows={calculateRows(value)}
-              className="flex-1 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono"
-            />
-          ) : (
-            <input
-              type="text"
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              className="flex-1 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          )
+          <>
+            {type === 'textarea' ? (
+              <textarea
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                rows={calculateRows(value)}
+                className="flex-1 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono"
+              />
+            ) : (
+              <input
+                type="text"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                className="flex-1 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            )}
+            {canDelete && onDelete && (
+              <button
+                onClick={onDelete}
+                className="flex-shrink-0 p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+                title="删除"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+          </>
         ) : (
           <div className="flex-1 text-sm text-neutral-900 whitespace-pre-wrap">{value}</div>
         )}
@@ -285,7 +304,13 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
     );
   };
 
-  const renderSection = (title: string, section: string, children: React.ReactNode) => {
+  const renderSection = (
+    title: string,
+    section: string,
+    children: React.ReactNode,
+    canAddFields: boolean = false,
+    onAddField?: () => void
+  ) => {
     const isEditing = editingSection === section;
     const isCompleted = projectStatus === 'completed';
     return (
@@ -324,6 +349,17 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
         <div className="divide-y divide-neutral-200">
           {children}
         </div>
+        {isEditing && canAddFields && onAddField && (
+          <div className="px-4 py-3 border-t border-neutral-200 bg-neutral-50">
+            <button
+              onClick={onAddField}
+              className="w-full px-4 py-2 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors flex items-center justify-center"
+            >
+              <Plus className="w-4 h-4 mr-1" />
+              新增字段
+            </button>
+          </div>
+        )}
       </div>
     );
   };
@@ -378,6 +414,24 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
     const isCompleted = projectStatus === 'completed';
     const listItems = showAsList ? parseContentToList(content) : [];
 
+    const handleAddListItem = () => {
+      const currentContent = content.trim();
+      const newContent = currentContent ? currentContent + '\n' : '';
+      onChange(newContent);
+    };
+
+    const handleDeleteListItem = (index: number) => {
+      const lines = content.split('\n').filter(line => line.trim().length > 0);
+      lines.splice(index, 1);
+      onChange(lines.join('\n'));
+    };
+
+    const handleUpdateListItem = (index: number, value: string) => {
+      const lines = content.split('\n').filter(line => line.trim().length > 0);
+      lines[index] = value;
+      onChange(lines.join('\n'));
+    };
+
     return (
       <div className="border border-neutral-200 rounded-lg overflow-hidden">
         <div className="bg-neutral-50 px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
@@ -429,26 +483,53 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
                   </div>
                 </div>
               )}
-              {showAsList && (
-                <div className="mb-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-sm text-blue-800">
-                    <strong>编辑提示：</strong>每行内容将作为一个独立项展示，每行对应列表中的一条要求。
-                  </p>
-                  <div className="mt-2 text-xs text-blue-700 bg-white rounded p-2">
-                    示例：<br/>
-                    本次招标要求投标人须为中华人民共和国境内依法注册的法人...<br/>
-                    本次招标不接受联合体投标。<br/>
-                    投标人须具有独立承担民事责任的能力。
+              {showAsList ? (
+                <div className="space-y-3">
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <p className="text-sm text-blue-800">
+                      <strong>编辑提示：</strong>您可以逐项编辑内容，点击"新增"添加新项，点击"删除"移除不需要的项。
+                    </p>
                   </div>
+                  <div className="space-y-2">
+                    {listItems.map((item, index) => (
+                      <div key={index} className="flex items-start gap-2 bg-white border border-neutral-200 rounded-lg p-3">
+                        <label className="text-sm font-medium text-neutral-600 flex-shrink-0 mt-2 w-20">
+                          要求 {index + 1}
+                        </label>
+                        <textarea
+                          value={item.text}
+                          onChange={(e) => handleUpdateListItem(index, e.target.value)}
+                          rows={2}
+                          className="flex-1 px-3 py-2 text-sm border border-neutral-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                          placeholder="请输入内容..."
+                        />
+                        <button
+                          onClick={() => handleDeleteListItem(index)}
+                          className="flex-shrink-0 p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors mt-1"
+                          title="删除"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    onClick={handleAddListItem}
+                    className="w-full px-4 py-2 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors flex items-center justify-center"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    新增项
+                  </button>
                 </div>
+              ) : (
+                <textarea
+                  value={content}
+                  onChange={(e) => onChange(e.target.value)}
+                  rows={10}
+                  placeholder={isDirectory ? "请输入投标文件目录...\n\n建议使用层级格式：\n一、主要章节\n  1.1 子章节\n  1.2 子章节\n二、主要章节\n  2.1 子章节" : ""}
+                  className="w-full px-3 py-2 text-sm border border-neutral-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono"
+                />
               )}
-              <textarea
-                value={content}
-                onChange={(e) => onChange(e.target.value)}
-                rows={10}
-                placeholder={isDirectory ? "请输入投标文件目录...\n\n建议使用层级格式：\n一、主要章节\n  1.1 子章节\n  1.2 子章节\n二、主要章节\n  2.1 子章节" : showAsList ? "每行输入一条内容...\n例如：\n1. 具有独立法人资格\n2. 具备有效的营业执照\n3. 近三年无重大违法记录" : ""}
-                className="w-full px-3 py-2 text-sm border border-neutral-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono"
-              />
             </div>
           ) : isEmpty ? (
             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start space-x-3">
@@ -548,14 +629,25 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
   );
 
   const renderQualificationRequirements = () => {
-    const requirements = data.qualificationRequirements
-      .split('\n')
-      .filter(line => line.trim().length > 0)
-      .map(line => line.trim());
+    const allLines = data.qualificationRequirements.split('\n');
+    const requirements = allLines.length === 1 && allLines[0].trim() === '' ? [] : allLines;
 
     const updateRequirement = (index: number, value: string) => {
       const newRequirements = [...requirements];
       newRequirements[index] = value;
+      setData({ ...data, qualificationRequirements: newRequirements.join('\n') });
+    };
+
+    const deleteRequirement = (index: number) => {
+      const newRequirements = requirements.filter((_, i) => i !== index);
+      setData({
+        ...data,
+        qualificationRequirements: newRequirements.length > 0 ? newRequirements.join('\n') : ''
+      });
+    };
+
+    const addRequirement = () => {
+      const newRequirements = [...requirements, '新增资格要求'];
       setData({ ...data, qualificationRequirements: newRequirements.join('\n') });
     };
 
@@ -569,33 +661,43 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
             </p>
           </div>
         )}
-        {renderSection('资格要求', 'qualificationRequirements', (
-          <>
-            {requirements.map((req, index) =>
-              renderField(
-                `要求 ${index + 1}`,
-                req,
-                (val) => updateRequirement(index, val),
-                'qualificationRequirements',
-                'textarea'
-              )
-            )}
-          </>
-        ))}
+        {renderSection(
+          '资格要求',
+          'qualificationRequirements',
+          (
+            <>
+              {requirements.length === 0 ? (
+                <div className="px-4 py-8 text-center text-neutral-500">
+                  暂无资格要求，点击"新增字段"添加
+                </div>
+              ) : (
+                requirements.map((req, index) =>
+                  renderField(
+                    `要求 ${index + 1}`,
+                    req,
+                    (val) => updateRequirement(index, val),
+                    'qualificationRequirements',
+                    'textarea',
+                    true,
+                    () => deleteRequirement(index)
+                  )
+                )
+              )}
+            </>
+          ),
+          true,
+          addRequirement
+        )}
       </div>
     );
   };
 
   const renderEvaluationCriteria = () => {
-    const commercialItems = data.evaluationCriteria.commercial
-      .split('\n')
-      .filter(line => line.trim().length > 0)
-      .map(line => line.trim());
+    const allCommercialLines = data.evaluationCriteria.commercial.split('\n');
+    const commercialItems = allCommercialLines.length === 1 && allCommercialLines[0].trim() === '' ? [] : allCommercialLines;
 
-    const technicalItems = data.evaluationCriteria.technical
-      .split('\n')
-      .filter(line => line.trim().length > 0)
-      .map(line => line.trim());
+    const allTechnicalLines = data.evaluationCriteria.technical.split('\n');
+    const technicalItems = allTechnicalLines.length === 1 && allTechnicalLines[0].trim() === '' ? [] : allTechnicalLines;
 
     const updateCommercialItem = (index: number, value: string) => {
       const newItems = [...commercialItems];
@@ -606,9 +708,41 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
       });
     };
 
+    const deleteCommercialItem = (index: number) => {
+      const newItems = commercialItems.filter((_, i) => i !== index);
+      setData({
+        ...data,
+        evaluationCriteria: { ...data.evaluationCriteria, commercial: newItems.length > 0 ? newItems.join('\n') : '' }
+      });
+    };
+
+    const addCommercialItem = () => {
+      const newItems = [...commercialItems, '新增商务评分项'];
+      setData({
+        ...data,
+        evaluationCriteria: { ...data.evaluationCriteria, commercial: newItems.join('\n') }
+      });
+    };
+
     const updateTechnicalItem = (index: number, value: string) => {
       const newItems = [...technicalItems];
       newItems[index] = value;
+      setData({
+        ...data,
+        evaluationCriteria: { ...data.evaluationCriteria, technical: newItems.join('\n') }
+      });
+    };
+
+    const deleteTechnicalItem = (index: number) => {
+      const newItems = technicalItems.filter((_, i) => i !== index);
+      setData({
+        ...data,
+        evaluationCriteria: { ...data.evaluationCriteria, technical: newItems.length > 0 ? newItems.join('\n') : '' }
+      });
+    };
+
+    const addTechnicalItem = () => {
+      const newItems = [...technicalItems, '新增技术评分项'];
       setData({
         ...data,
         evaluationCriteria: { ...data.evaluationCriteria, technical: newItems.join('\n') }
@@ -625,45 +759,84 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
             </p>
           </div>
         )}
-        {renderSection('商务评分标准', 'evaluationCommercial', (
-          <>
-            {commercialItems.map((item, index) =>
-              renderField(
-                `评分项 ${index + 1}`,
-                item,
-                (val) => updateCommercialItem(index, val),
-                'evaluationCommercial',
-                'textarea'
-              )
-            )}
-          </>
-        ))}
-        {renderSection('技术评分标准', 'evaluationTechnical', (
-          <>
-            {technicalItems.map((item, index) =>
-              renderField(
-                `评分项 ${index + 1}`,
-                item,
-                (val) => updateTechnicalItem(index, val),
-                'evaluationTechnical',
-                'textarea'
-              )
-            )}
-          </>
-        ))}
+        {renderSection(
+          '商务评分标准',
+          'evaluationCommercial',
+          (
+            <>
+              {commercialItems.length === 0 ? (
+                <div className="px-4 py-8 text-center text-neutral-500">
+                  暂无商务评分标准，点击"新增字段"添加
+                </div>
+              ) : (
+                commercialItems.map((item, index) =>
+                  renderField(
+                    `评分项 ${index + 1}`,
+                    item,
+                    (val) => updateCommercialItem(index, val),
+                    'evaluationCommercial',
+                    'textarea',
+                    true,
+                    () => deleteCommercialItem(index)
+                  )
+                )
+              )}
+            </>
+          ),
+          true,
+          addCommercialItem
+        )}
+        {renderSection(
+          '技术评分标准',
+          'evaluationTechnical',
+          (
+            <>
+              {technicalItems.length === 0 ? (
+                <div className="px-4 py-8 text-center text-neutral-500">
+                  暂无技术评分标准，点击"新增字段"添加
+                </div>
+              ) : (
+                technicalItems.map((item, index) =>
+                  renderField(
+                    `评分项 ${index + 1}`,
+                    item,
+                    (val) => updateTechnicalItem(index, val),
+                    'evaluationTechnical',
+                    'textarea',
+                    true,
+                    () => deleteTechnicalItem(index)
+                  )
+                )
+              )}
+            </>
+          ),
+          true,
+          addTechnicalItem
+        )}
       </div>
     );
   };
 
   const renderDocumentRequirements = () => {
-    const requirements = data.documentRequirements
-      .split('\n')
-      .filter(line => line.trim().length > 0)
-      .map(line => line.trim());
+    const allLines = data.documentRequirements.split('\n');
+    const requirements = allLines.length === 1 && allLines[0].trim() === '' ? [] : allLines;
 
     const updateRequirement = (index: number, value: string) => {
       const newRequirements = [...requirements];
       newRequirements[index] = value;
+      setData({ ...data, documentRequirements: newRequirements.join('\n') });
+    };
+
+    const deleteRequirement = (index: number) => {
+      const newRequirements = requirements.filter((_, i) => i !== index);
+      setData({
+        ...data,
+        documentRequirements: newRequirements.length > 0 ? newRequirements.join('\n') : ''
+      });
+    };
+
+    const addDocumentRequirement = () => {
+      const newRequirements = [...requirements, '新增投标文件要求'];
       setData({ ...data, documentRequirements: newRequirements.join('\n') });
     };
 
@@ -677,32 +850,54 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
             </p>
           </div>
         )}
-        {renderSection('投标文件要求', 'documentRequirements', (
-          <>
-            {requirements.map((req, index) =>
-              renderField(
-                `要求 ${index + 1}`,
-                req,
-                (val) => updateRequirement(index, val),
-                'documentRequirements',
-                'textarea'
-              )
-            )}
-          </>
-        ))}
+        {renderSection(
+          '投标文件要求',
+          'documentRequirements',
+          (
+            <>
+              {requirements.length === 0 ? (
+                <div className="px-4 py-8 text-center text-neutral-500">
+                  暂无投标文件要求，点击"新增字段"添加
+                </div>
+              ) : (
+                requirements.map((req, index) =>
+                  renderField(
+                    `要求 ${index + 1}`,
+                    req,
+                    (val) => updateRequirement(index, val),
+                    'documentRequirements',
+                    'textarea',
+                    true,
+                    () => deleteRequirement(index)
+                  )
+                )
+              )}
+            </>
+          ),
+          true,
+          addDocumentRequirement
+        )}
       </div>
     );
   };
 
   const renderRisks = () => {
-    const risks = data.risks
-      .split('\n')
-      .filter(line => line.trim().length > 0)
-      .map(line => line.trim());
+    const allLines = data.risks.split('\n');
+    const risks = allLines.length === 1 && allLines[0].trim() === '' ? [] : allLines;
 
     const updateRisk = (index: number, value: string) => {
       const newRisks = [...risks];
       newRisks[index] = value;
+      setData({ ...data, risks: newRisks.join('\n') });
+    };
+
+    const deleteRisk = (index: number) => {
+      const newRisks = risks.filter((_, i) => i !== index);
+      setData({ ...data, risks: newRisks.length > 0 ? newRisks.join('\n') : '' });
+    };
+
+    const addRisk = () => {
+      const newRisks = [...risks, '新增风险项/废标项'];
       setData({ ...data, risks: newRisks.join('\n') });
     };
 
@@ -716,19 +911,33 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
             </p>
           </div>
         )}
-        {renderSection('风险项/废标项', 'risks', (
-          <>
-            {risks.map((risk, index) =>
-              renderField(
-                `风险项 ${index + 1}`,
-                risk,
-                (val) => updateRisk(index, val),
-                'risks',
-                'textarea'
-              )
-            )}
-          </>
-        ))}
+        {renderSection(
+          '风险项/废标项',
+          'risks',
+          (
+            <>
+              {risks.length === 0 ? (
+                <div className="px-4 py-8 text-center text-neutral-500">
+                  暂无风险项/废标项，点击"新增字段"添加
+                </div>
+              ) : (
+                risks.map((risk, index) =>
+                  renderField(
+                    `风险项 ${index + 1}`,
+                    risk,
+                    (val) => updateRisk(index, val),
+                    'risks',
+                    'textarea',
+                    true,
+                    () => deleteRisk(index)
+                  )
+                )
+              )}
+            </>
+          ),
+          true,
+          addRisk
+        )}
       </div>
     );
   };

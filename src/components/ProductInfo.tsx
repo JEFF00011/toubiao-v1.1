@@ -12,6 +12,7 @@ interface ProductCategory {
   id: string;
   name: string;
   description: string;
+  parentId?: string;
 }
 
 interface Product {
@@ -67,7 +68,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
 
   const [searchName, setSearchName] = useState('');
   const [searchBrand, setSearchBrand] = useState('');
-  const [searchSpecification, setSearchSpecification] = useState('');
   const [searchModel, setSearchModel] = useState('');
   const [searchCategory, setSearchCategory] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -158,11 +158,12 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
     });
   };
 
-  const handleAddCategory = () => {
+  const handleAddCategory = (parentId?: string) => {
     setEditingCategory({
       id: '',
       name: '',
-      description: ''
+      description: '',
+      parentId: parentId
     });
     setShowCategoryModal(true);
   };
@@ -328,10 +329,9 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
     return data[activeCategory].filter(product => {
       const matchesName = !searchName || product.name.toLowerCase().includes(searchName.toLowerCase());
       const matchesBrand = !searchBrand || product.brand.toLowerCase().includes(searchBrand.toLowerCase());
-      const matchesSpecification = !searchSpecification || product.specification.toLowerCase().includes(searchSpecification.toLowerCase());
       const matchesModel = !searchModel || product.model.toLowerCase().includes(searchModel.toLowerCase());
       const matchesCategory = searchCategory === 'all' || product.categoryId === searchCategory;
-      return matchesName && matchesBrand && matchesSpecification && matchesModel && matchesCategory;
+      return matchesName && matchesBrand && matchesModel && matchesCategory;
     }).sort((a, b) => {
       const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -351,7 +351,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
   const handleReset = () => {
     setSearchName('');
     setSearchBrand('');
-    setSearchSpecification('');
     setSearchModel('');
     setSearchCategory('all');
     setCurrentPage(1);
@@ -376,7 +375,14 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
 
   const getCategoryName = (categoryId: string) => {
     const category = categories[activeCategory].find(c => c.id === categoryId);
-    return category ? category.name : '-';
+    if (!category) return '-';
+
+    if (category.parentId) {
+      const parentCategory = categories[activeCategory].find(c => c.id === category.parentId);
+      return parentCategory ? `${category.name} (${parentCategory.name})` : category.name;
+    }
+
+    return category.name;
   };
 
   const categoryNames = {
@@ -441,14 +447,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
                     onChange={(e) => setSearchBrand(e.target.value)}
                     className="w-40 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                   />
-                  产品规格
-                  <input
-                    type="text"
-                    placeholder="请输入产品规格"
-                    value={searchSpecification}
-                    onChange={(e) => setSearchSpecification(e.target.value)}
-                    className="w-40 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                  />
                   产品型号
                   <input
                     type="text"
@@ -464,9 +462,21 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
                     className="px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                   >
                     <option value="all">全部</option>
-                    {categories[activeCategory].map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
+                    {categories[activeCategory]
+                      .filter(cat => !cat.parentId)
+                      .map(parentCat => {
+                        const subCategories = categories[activeCategory].filter(sub => sub.parentId === parentCat.id);
+                        return (
+                          <React.Fragment key={parentCat.id}>
+                            <option value={parentCat.id}>{parentCat.name}</option>
+                            {subCategories.map(subCat => (
+                              <option key={subCat.id} value={subCat.id}>
+                                └─ {subCat.name} (父级: {parentCat.name})
+                              </option>
+                            ))}
+                          </React.Fragment>
+                        );
+                      })}
                   </select>
                 </div>
 
@@ -514,7 +524,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">产品分类</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">产品名称</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">产品品牌</th>
-                    <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">产品规格</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">产品型号</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">相关附件</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">操作</th>
@@ -523,7 +532,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
                 <tbody className="divide-y divide-neutral-200">
                   {paginatedProducts().length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="px-4 py-8 text-center text-neutral-500">
+                      <td colSpan={7} className="px-4 py-8 text-center text-neutral-500">
                         暂无数据
                       </td>
                     </tr>
@@ -536,7 +545,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
                         <td className="px-4 py-3 text-sm text-neutral-600">{getCategoryName(product.categoryId)}</td>
                         <td className="px-4 py-3 text-sm text-neutral-900">{product.name}</td>
                         <td className="px-4 py-3 text-sm text-neutral-600">{product.brand || '-'}</td>
-                        <td className="px-4 py-3 text-sm text-neutral-600">{product.specification || '-'}</td>
                         <td className="px-4 py-3 text-sm text-neutral-600">{product.model || '-'}</td>
                         <td className="px-4 py-3 text-sm text-neutral-600">{product.attachments.length}个</td>
                         <td className="px-4 py-3 text-sm">
@@ -672,7 +680,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
             <div className="p-6">
               <div className="mb-4">
                 <button
-                  onClick={handleAddCategory}
+                  onClick={() => handleAddCategory()}
                   className="px-4 py-2 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors flex items-center"
                 >
                   <Plus className="w-4 h-4 mr-1" />
@@ -698,31 +706,70 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
                         </td>
                       </tr>
                     ) : (
-                      categories[activeCategory].map((category, index) => (
-                        <tr key={category.id} className="hover:bg-neutral-50">
-                          <td className="px-4 py-3 text-sm text-neutral-900">{index + 1}</td>
-                          <td className="px-4 py-3 text-sm text-neutral-900">{category.name}</td>
-                          <td className="px-4 py-3 text-sm text-neutral-600">{category.description || '-'}</td>
-                          <td className="px-4 py-3 text-sm">
-                            <div className="flex items-center space-x-2">
-                              <button
-                                onClick={() => handleEditCategory(category)}
-                                className="text-primary-600 hover:text-primary-800"
-                                title="编辑"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteCategory(category.id)}
-                                className="text-red-600 hover:text-red-800"
-                                title="删除"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
+                      categories[activeCategory]
+                        .filter(cat => !cat.parentId)
+                        .map((category, index) => {
+                          const subCategories = categories[activeCategory].filter(sub => sub.parentId === category.id);
+                          return (
+                            <React.Fragment key={category.id}>
+                              <tr className="hover:bg-neutral-50">
+                                <td className="px-4 py-3 text-sm text-neutral-900">{index + 1}</td>
+                                <td className="px-4 py-3 text-sm text-neutral-900 font-medium">{category.name}</td>
+                                <td className="px-4 py-3 text-sm text-neutral-600">{category.description || '-'}</td>
+                                <td className="px-4 py-3 text-sm">
+                                  <div className="flex items-center space-x-2">
+                                    <button
+                                      onClick={() => handleAddCategory(category.id)}
+                                      className="text-green-600 hover:text-green-800"
+                                      title="添加子分类"
+                                    >
+                                      <Plus className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleEditCategory(category)}
+                                      className="text-primary-600 hover:text-primary-800"
+                                      title="编辑"
+                                    >
+                                      <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleDeleteCategory(category.id)}
+                                      className="text-red-600 hover:text-red-800"
+                                      title="删除"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                              {subCategories.map((subCat, subIndex) => (
+                                <tr key={subCat.id} className="hover:bg-neutral-50 bg-neutral-25">
+                                  <td className="px-4 py-3 text-sm text-neutral-900 pl-8">{index + 1}.{subIndex + 1}</td>
+                                  <td className="px-4 py-3 text-sm text-neutral-700 pl-8">└─ {subCat.name}</td>
+                                  <td className="px-4 py-3 text-sm text-neutral-600">{subCat.description || '-'}</td>
+                                  <td className="px-4 py-3 text-sm">
+                                    <div className="flex items-center space-x-2">
+                                      <button
+                                        onClick={() => handleEditCategory(subCat)}
+                                        className="text-primary-600 hover:text-primary-800"
+                                        title="编辑"
+                                      >
+                                        <Edit className="w-4 h-4" />
+                                      </button>
+                                      <button
+                                        onClick={() => handleDeleteCategory(subCat.id)}
+                                        className="text-red-600 hover:text-red-800"
+                                        title="删除"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              ))}
+                            </React.Fragment>
+                          );
+                        })
                     )}
                   </tbody>
                 </table>
@@ -773,9 +820,21 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
                       className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     >
                       <option value="">请选择分类</option>
-                      {categories[activeCategory].map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
+                      {categories[activeCategory]
+                        .filter(cat => !cat.parentId)
+                        .map(parentCat => {
+                          const subCategories = categories[activeCategory].filter(sub => sub.parentId === parentCat.id);
+                          return (
+                            <React.Fragment key={parentCat.id}>
+                              <option value={parentCat.id}>{parentCat.name}</option>
+                              {subCategories.map(subCat => (
+                                <option key={subCat.id} value={subCat.id}>
+                                  └─ {subCat.name} (父级: {parentCat.name})
+                                </option>
+                              ))}
+                            </React.Fragment>
+                          );
+                        })}
                     </select>
                   </div>
                   <div>
@@ -799,18 +858,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
                       value={editingProduct.brand}
                       onChange={(e) => setEditingProduct({ ...editingProduct, brand: e.target.value })}
                       placeholder="请输入产品品牌"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">
-                      产品规格
-                    </label>
-                    <input
-                      type="text"
-                      value={editingProduct.specification}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, specification: e.target.value })}
-                      placeholder="请输入产品规格"
                       className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
@@ -940,6 +987,11 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
             </div>
 
             <div className="p-6 space-y-4">
+              {editingCategory.parentId && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-800">
+                  正在创建子分类，父分类：{categories[activeCategory].find(c => c.id === editingCategory.parentId)?.name}
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium text-neutral-700 mb-1">
                   分类名称 <span className="text-red-500">*</span>

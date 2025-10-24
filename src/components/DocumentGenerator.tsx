@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, FileText, CheckCircle, Building2, FolderTree, Database, Loader, Download, X } from 'lucide-react';
+import { ArrowLeft, ArrowRight, FileText, CheckCircle, Building2, FolderTree, Loader, Download, X } from 'lucide-react';
 
 interface BiddingProject {
   id: string;
@@ -15,6 +15,23 @@ interface BiddingProject {
 interface Company {
   id: string;
   name: string;
+}
+
+interface DocumentFormat {
+  id: string;
+  company_id: string;
+  name: string;
+  header: string;
+  footer: string;
+  margin_top: number;
+  margin_bottom: number;
+  margin_left: number;
+  margin_right: number;
+  heading_styles: any;
+  body_text_style: any;
+  is_default: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 interface DirectoryItem {
@@ -89,6 +106,8 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const [commercialDirectory, setCommercialDirectory] = useState<DirectoryItem[]>([]);
   const [technicalDirectory, setTechnicalDirectory] = useState<DirectoryItem[]>([]);
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [selectedFormat, setSelectedFormat] = useState<DocumentFormat | null>(null);
+  const [documentFormats, setDocumentFormats] = useState<DocumentFormat[]>([]);
   const [knowledgeCategories, setKnowledgeCategories] = useState<KnowledgeCategory[]>([]);
   const [categoryFilters, setCategoryFilters] = useState<{ [key: string]: { [key: string]: string } }>({});
   const [categorySearches, setCategorySearches] = useState<{ [key: string]: { [key: string]: string } }>({});
@@ -166,6 +185,69 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     { id: '3', name: '深圳YY软件开发公司' }
   ];
 
+  const MOCK_FORMATS: DocumentFormat[] = [
+    {
+      id: 'fmt_1',
+      company_id: '1',
+      name: '标准格式A',
+      header: '北京某某科技有限公司',
+      footer: '第 {page} 页 共 {total} 页',
+      margin_top: 25,
+      margin_bottom: 25,
+      margin_left: 30,
+      margin_right: 30,
+      heading_styles: {
+        heading1: { numberingStyle: '一、', fontFamily: '宋体', fontSize: 18, indent: 0, lineSpacing: 1.5, alignment: 'center', bold: true },
+        heading2: { numberingStyle: '（一）', fontFamily: '宋体', fontSize: 16, indent: 0, lineSpacing: 1.5, alignment: 'left', bold: true },
+        heading3: { numberingStyle: '1.', fontFamily: '宋体', fontSize: 15, indent: 0, lineSpacing: 1.5, alignment: 'left', bold: true }
+      },
+      body_text_style: { numberingStyle: '1.', fontFamily: '宋体', fontSize: 14, indent: 2, lineSpacing: 1.5, alignment: 'left', bold: false },
+      is_default: true,
+      created_at: '2024-10-20',
+      updated_at: '2024-10-20'
+    },
+    {
+      id: 'fmt_2',
+      company_id: '1',
+      name: '简约格式B',
+      header: '',
+      footer: '第 {page} 页',
+      margin_top: 20,
+      margin_bottom: 20,
+      margin_left: 25,
+      margin_right: 25,
+      heading_styles: {
+        heading1: { numberingStyle: '1.', fontFamily: '微软雅黑', fontSize: 16, indent: 0, lineSpacing: 1.3, alignment: 'left', bold: true },
+        heading2: { numberingStyle: '1.1', fontFamily: '微软雅黑', fontSize: 14, indent: 0, lineSpacing: 1.3, alignment: 'left', bold: true },
+        heading3: { numberingStyle: '1.1.1', fontFamily: '微软雅黑', fontSize: 13, indent: 0, lineSpacing: 1.3, alignment: 'left', bold: false }
+      },
+      body_text_style: { numberingStyle: '', fontFamily: '微软雅黑', fontSize: 12, indent: 2, lineSpacing: 1.3, alignment: 'left', bold: false },
+      is_default: false,
+      created_at: '2024-10-18',
+      updated_at: '2024-10-18'
+    },
+    {
+      id: 'fmt_3',
+      company_id: '2',
+      name: '正式格式',
+      header: '上海XX信息技术有限公司投标文件',
+      footer: '第 {page} 页 共 {total} 页',
+      margin_top: 30,
+      margin_bottom: 30,
+      margin_left: 35,
+      margin_right: 35,
+      heading_styles: {
+        heading1: { numberingStyle: '第一章 ', fontFamily: '仿宋', fontSize: 20, indent: 0, lineSpacing: 2.0, alignment: 'center', bold: true },
+        heading2: { numberingStyle: '一、', fontFamily: '仿宋', fontSize: 16, indent: 0, lineSpacing: 1.8, alignment: 'left', bold: true },
+        heading3: { numberingStyle: '（一）', fontFamily: '仿宋', fontSize: 15, indent: 0, lineSpacing: 1.5, alignment: 'left', bold: true }
+      },
+      body_text_style: { numberingStyle: '', fontFamily: '仿宋', fontSize: 14, indent: 2, lineSpacing: 1.5, alignment: 'justify', bold: false },
+      is_default: true,
+      created_at: '2024-10-15',
+      updated_at: '2024-10-15'
+    }
+  ];
+
   const MOCK_KNOWLEDGE: KnowledgeCategory[] = [
     {
       id: 'company',
@@ -234,10 +316,16 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       id: 'authorizedDelegate',
       name: '人员信息 - 授权委托人',
       items: [
-        { id: 'auth_1', name: '李明', position: '授权委托人', status: 'active', uploadTime: '2024-10-22', isAuthorizedDelegate: true, selected: true },
-        { id: 'auth_2', name: '陈晨', position: '授权委托人', status: 'active', uploadTime: '2024-10-18', isAuthorizedDelegate: true, selected: false }
+        { id: 'per_1', name: '张三', position: '项目经理', status: 'active', uploadTime: '2024-10-22', selected: true },
+        { id: 'per_2', name: '李四', position: '技术总监', status: 'active', uploadTime: '2024-10-20', selected: true },
+        { id: 'per_3', name: '王五', position: '项目经理', status: 'active', uploadTime: '2024-10-15', selected: false },
+        { id: 'per_4', name: '赵六', position: '架构师', status: 'active', uploadTime: '2024-09-28', selected: false },
+        { id: 'per_5', name: '孙七', position: '开发经理', status: 'resigned', uploadTime: '2024-08-10', selected: false },
+        { id: 'per_6', name: '周八', position: '测试经理', status: 'active', uploadTime: '2024-09-15', selected: false },
+        { id: 'per_7', name: '吴九', position: '运维工程师', status: 'active', uploadTime: '2024-09-01', selected: false }
       ],
       filters: {
+        position: ['项目经理', '技术总监', '架构师', '开发经理', '测试经理', '运维工程师'],
         status: ['active', 'resigned']
       }
     },
@@ -249,10 +337,12 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         { id: 'per_2', name: '李四', position: '技术总监', status: 'active', uploadTime: '2024-10-20', selected: true },
         { id: 'per_3', name: '王五', position: '项目经理', status: 'active', uploadTime: '2024-10-15', selected: false },
         { id: 'per_4', name: '赵六', position: '架构师', status: 'active', uploadTime: '2024-09-28', selected: false },
-        { id: 'per_5', name: '孙七', position: '开发经理', status: 'resigned', uploadTime: '2024-08-10', selected: false }
+        { id: 'per_5', name: '孙七', position: '开发经理', status: 'resigned', uploadTime: '2024-08-10', selected: false },
+        { id: 'per_6', name: '周八', position: '测试经理', status: 'active', uploadTime: '2024-09-15', selected: false },
+        { id: 'per_7', name: '吴九', position: '运维工程师', status: 'active', uploadTime: '2024-09-01', selected: false }
       ],
       filters: {
-        position: ['项目经理', '技术总监', '架构师', '开发经理'],
+        position: ['项目经理', '技术总监', '架构师', '开发经理', '测试经理', '运维工程师'],
         status: ['active', 'resigned']
       }
     },
@@ -365,6 +455,10 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const handleCompanySelect = (company: Company) => {
     setSelectedCompany(company);
     setKnowledgeCategories(MOCK_KNOWLEDGE);
+    const companyFormats = MOCK_FORMATS.filter(fmt => fmt.company_id === company.id);
+    setDocumentFormats(companyFormats);
+    const defaultFormat = companyFormats.find(fmt => fmt.is_default);
+    setSelectedFormat(defaultFormat || companyFormats[0] || null);
   };
 
   const updateWordCount = (itemId: string, count: number, items: DirectoryItem[]): DirectoryItem[] => {
@@ -439,7 +533,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   };
 
   const handleNextStep = () => {
-    setCurrentStep(prev => Math.min(prev + 1, 6));
+    setCurrentStep(prev => Math.min(prev + 1, 7));
   };
 
   const handlePrevStep = () => {
@@ -458,6 +552,8 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         return selectedCompany !== null;
       case 5:
         return knowledgeCategories.some(cat => cat.items.some(item => item.selected));
+      case 6:
+        return selectedFormat !== null;
       default:
         return true;
     }
@@ -497,7 +593,8 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     { number: 3, name: '选择文件' },
     { number: 4, name: '企业知识库' },
     { number: 5, name: '知识资料' },
-    { number: 6, name: '生成文件' }
+    { number: 6, name: '文件格式' },
+    { number: 7, name: '生成文件' }
   ];
 
   const renderStepIndicator = () => (
@@ -917,7 +1014,6 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         }
         if (searches.productName && !item.productName?.toLowerCase().includes(searches.productName.toLowerCase())) return false;
         if (searches.productBrand && !item.productBrand?.toLowerCase().includes(searches.productBrand.toLowerCase())) return false;
-        if (searches.productSpec && !item.productSpec?.toLowerCase().includes(searches.productSpec.toLowerCase())) return false;
         if (searches.productModel && !item.productModel?.toLowerCase().includes(searches.productModel.toLowerCase())) return false;
         if (searches.productQuantity && !item.productQuantity?.toLowerCase().includes(searches.productQuantity.toLowerCase())) return false;
       }
@@ -929,7 +1025,6 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       if (category.id === 'productionEquipment' || category.id === 'testingEquipment' || category.id === 'companyProducts') {
         if (searches.name && !item.name?.toLowerCase().includes(searches.name.toLowerCase())) return false;
         if (searches.productBrand && !item.productBrand?.toLowerCase().includes(searches.productBrand.toLowerCase())) return false;
-        if (searches.productSpec && !item.productSpec?.toLowerCase().includes(searches.productSpec.toLowerCase())) return false;
         if (searches.productModel && !item.productModel?.toLowerCase().includes(searches.productModel.toLowerCase())) return false;
       }
 
@@ -1116,13 +1211,6 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
           />
           <input
             type="text"
-            placeholder="产品规格"
-            value={searches.productSpec || ''}
-            onChange={(e) => handleSearchChange(category.id, 'productSpec', e.target.value)}
-            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-24"
-          />
-          <input
-            type="text"
             placeholder="产品型号"
             value={searches.productModel || ''}
             onChange={(e) => handleSearchChange(category.id, 'productModel', e.target.value)}
@@ -1194,13 +1282,6 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             placeholder="产品品牌"
             value={searches.productBrand || ''}
             onChange={(e) => handleSearchChange(category.id, 'productBrand', e.target.value)}
-            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-24"
-          />
-          <input
-            type="text"
-            placeholder="产品规格"
-            value={searches.productSpec || ''}
-            onChange={(e) => handleSearchChange(category.id, 'productSpec', e.target.value)}
             className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-24"
           />
           <input
@@ -1329,6 +1410,73 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   };
 
   const renderStep5 = () => {
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            第六步：选择投标文件格式，系统将使用该格式生成投标文件。
+          </p>
+        </div>
+        <h3 className="text-lg font-medium text-neutral-900 mb-4">
+          选择文件格式 <span className="text-red-500">*</span>
+        </h3>
+
+        {documentFormats.length === 0 ? (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 text-center">
+            <p className="text-amber-800">该企业暂无文件格式配置</p>
+            <p className="text-sm text-amber-600 mt-2">请前往格式设置页面添加文件格式</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {documentFormats.map((format) => (
+              <div
+                key={format.id}
+                onClick={() => !isViewMode && setSelectedFormat(format)}
+                className={`p-4 border-2 rounded-lg transition-all ${
+                  isViewMode ? 'cursor-not-allowed' : 'cursor-pointer hover:border-primary-300'
+                } ${
+                  selectedFormat?.id === format.id
+                    ? 'border-primary-600 bg-primary-50'
+                    : 'border-neutral-300 bg-white'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center">
+                      <h4 className="font-medium text-neutral-900">{format.name}</h4>
+                      {format.is_default && (
+                        <span className="ml-2 px-2 py-0.5 text-xs bg-primary-100 text-primary-700 rounded">
+                          默认
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-2 space-y-1 text-sm text-neutral-600">
+                      <div className="flex items-center gap-4">
+                        <span>页眉: {format.header || '无'}</span>
+                        <span>页脚: {format.footer}</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span>边距: 上{format.margin_top}mm 下{format.margin_bottom}mm 左{format.margin_left}mm 右{format.margin_right}mm</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span>正文字体: {format.body_text_style.fontFamily} {format.body_text_style.fontSize}号</span>
+                        <span>行距: {format.body_text_style.lineSpacing}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {selectedFormat?.id === format.id && (
+                    <CheckCircle className="w-6 h-6 text-primary-600 flex-shrink-0 ml-3" />
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderStep6 = () => {
     const productCategories = ['productionEquipment', 'testingEquipment', 'companyProducts'];
     const personnelCategories = ['legalPerson', 'authorizedDelegate', 'otherPersonnel'];
     const isProductTab = activeKnowledgeTab === 'product';
@@ -1467,41 +1615,50 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         </div>
 
         {isPersonnelTab && (
-          <div className="mb-4 border-b border-neutral-200">
-            <div className="flex space-x-2">
-              {allPersonnelCategories.map(category => {
-                const categorySelectedCount = category.items.filter(item => item.selected).length;
-                const categoryTotalCount = category.items.length;
-                const personnelTabNames = {
-                  legalPerson: '法人',
-                  authorizedDelegate: '授权委托人',
-                  otherPersonnel: '其他人员'
-                };
+          <div className="mb-4">
+            <div className="border-b border-neutral-200">
+              <div className="flex space-x-2">
+                {allPersonnelCategories.map(category => {
+                  const categorySelectedCount = category.items.filter(item => item.selected).length;
+                  const categoryTotalCount = category.items.length;
+                  const personnelTabNames = {
+                    legalPerson: '法人',
+                    authorizedDelegate: '授权委托人',
+                    otherPersonnel: '其他人员'
+                  };
 
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => setActivePersonnelTab(category.id as any)}
-                    className={`px-4 py-2 text-sm font-medium transition-colors rounded-t ${
-                      activePersonnelTab === category.id
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-                    }`}
-                  >
-                    {personnelTabNames[category.id as keyof typeof personnelTabNames]}
-                    {categorySelectedCount > 0 && (
-                      <span className={`ml-2 px-1.5 py-0.5 text-xs rounded ${
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => setActivePersonnelTab(category.id as any)}
+                      className={`px-4 py-2 text-sm font-medium transition-colors rounded-t ${
                         activePersonnelTab === category.id
-                          ? 'bg-primary-700 text-white'
-                          : 'bg-neutral-200 text-neutral-700'
-                      }`}>
-                        {categorySelectedCount}/{categoryTotalCount}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                      }`}
+                    >
+                      {personnelTabNames[category.id as keyof typeof personnelTabNames]}
+                      {categorySelectedCount > 0 && (
+                        <span className={`ml-2 px-1.5 py-0.5 text-xs rounded ${
+                          activePersonnelTab === category.id
+                            ? 'bg-primary-700 text-white'
+                            : 'bg-neutral-200 text-neutral-700'
+                        }`}>
+                          {categorySelectedCount}/{categoryTotalCount}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
+            {activePersonnelTab === 'authorizedDelegate' && (
+              <div className="mt-2 bg-blue-50 border border-blue-200 rounded p-3">
+                <p className="text-xs text-blue-800">
+                  <span className="font-medium">提示：</span>授权委托人可从企业所有人员（除法人外）中选择，选中的人员将作为投标项目的授权委托人。
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -1609,7 +1766,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     );
   };
 
-  const renderStep6 = () => {
+  const renderStep7 = () => {
     if (isComplete || isViewMode) {
       return (
         <div className="max-w-2xl mx-auto text-center">
@@ -1643,7 +1800,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       <div className="max-w-2xl mx-auto">
         <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            第六步：确认所有配置信息，点击开始生成按钮，系统将自动生成投标文件。
+            第七步：确认所有配置信息，点击开始生成按钮，系统将自动生成投标文件。
           </p>
         </div>
         <div className="text-center mb-8">
@@ -1651,7 +1808,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
           <p className="text-neutral-600">确认以下信息无误后，点击开始生成</p>
         </div>
 
-        <div className="bg-neutral-50 rounded-lg p-6 space-y-4 mb-8">
+        <div className="bg-neutral-50 rounded-lg p-6 space-y-4 mb-6">
           <div className="flex justify-between">
             <span className="text-sm text-neutral-600">文件名称：</span>
             <span className="text-sm font-medium text-neutral-900">{documentName}</span>
@@ -1673,11 +1830,59 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             <span className="text-sm font-medium text-neutral-900">{selectedCompany?.name}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-sm text-neutral-600">已选资料：</span>
-            <span className="text-sm font-medium text-neutral-900">
-              {knowledgeCategories.reduce((acc, cat) => acc + cat.items.filter(i => i.selected).length, 0)} 项
+            <span className="text-sm text-neutral-600">文件格式：</span>
+            <span className="text-sm font-medium text-neutral-900">{selectedFormat?.name}</span>
+          </div>
+        </div>
+
+        <div className="bg-white border border-neutral-200 rounded-lg p-6 mb-8">
+          <div className="flex items-center justify-between mb-4 pb-3 border-b border-neutral-200">
+            <h4 className="text-sm font-semibold text-neutral-900">已选知识库资料</h4>
+            <span className="text-sm font-semibold text-primary-600">
+              共 {knowledgeCategories.reduce((acc, cat) => acc + cat.items.filter(i => i.selected).length, 0)} 份
             </span>
           </div>
+          {(() => {
+            const getCategoryDisplayName = (categoryId: string): string => {
+              const nameMap: { [key: string]: string } = {
+                'company': '公司基础信息',
+                'qualification': '资质信息',
+                'financial': '财务信息',
+                'performance': '业绩信息',
+                'legalPerson': '法人信息',
+                'authorizedDelegate': '授权委托人信息',
+                'otherPersonnel': '其他人员信息',
+                'productionEquipment': '生产设备',
+                'testingEquipment': '检测设备',
+                'companyProducts': '企业产品',
+                'templates': '历史投标文件'
+              };
+              return nameMap[categoryId] || categoryId;
+            };
+
+            const selectedByCategory = knowledgeCategories
+              .map(cat => ({
+                id: cat.id,
+                name: getCategoryDisplayName(cat.id),
+                count: cat.items.filter(item => item.selected).length
+              }))
+              .filter(cat => cat.count > 0);
+
+            return selectedByCategory.length === 0 ? (
+              <div className="text-center py-4 text-neutral-500 text-sm">
+                暂未选择任何资料
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {selectedByCategory.map((cat) => (
+                  <div key={cat.id} className="flex justify-between items-center py-2 px-3 bg-neutral-50 rounded">
+                    <span className="text-sm text-neutral-700">{cat.name}</span>
+                    <span className="text-sm font-medium text-primary-600">{cat.count} 份</span>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
         </div>
 
         {isGenerating ? (
@@ -1723,18 +1928,15 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       case 4:
         return renderStep4();
       case 5:
-        return renderStep5();
-      case 6:
         return renderStep6();
+      case 6:
+        return renderStep5();
+      case 7:
+        return renderStep7();
       default:
         return null;
     }
   };
-
-  const totalSelectedFiles = knowledgeCategories.reduce(
-    (total, category) => total + category.items.filter(item => item.selected).length,
-    0
-  );
 
   return (
     <div className="flex flex-col h-full bg-white">
@@ -1743,21 +1945,12 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
           <h2 className="text-xl font-semibold text-neutral-900">
             {isViewMode ? '查看投标文件' : isEditMode ? '编辑投标文件' : '投标文件生成'}
           </h2>
-          <div className="flex items-center space-x-4">
-            {selectedCompany && knowledgeCategories.length > 0 && (
-              <div className="flex items-center space-x-2 px-4 py-2 bg-primary-50 border border-primary-200 rounded-lg">
-                <Database className="w-4 h-4 text-primary-600" />
-                <span className="text-sm text-neutral-700">已选择企业知识库文件：</span>
-                <span className="text-sm font-semibold text-primary-700">{totalSelectedFiles}</span>
-              </div>
-            )}
-            <button
-              onClick={onClose}
-              className="text-neutral-600 hover:text-neutral-900 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
-          </div>
+          <button
+            onClick={onClose}
+            className="text-neutral-600 hover:text-neutral-900 transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
         </div>
       </div>
 
@@ -1768,7 +1961,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         </div>
       </div>
 
-      {currentStep !== 6 && (
+      {currentStep !== 7 && (
         <div className="border-t border-neutral-200 px-6 py-4 flex justify-between flex-shrink-0">
           <button
             onClick={handlePrevStep}
@@ -1779,8 +1972,8 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             上一步
           </button>
           <button
-            onClick={isViewMode ? () => setCurrentStep(Math.min(currentStep + 1, 6)) : handleNextStep}
-            disabled={isViewMode ? currentStep >= 6 : !canProceedToNextStep()}
+            onClick={isViewMode ? () => setCurrentStep(Math.min(currentStep + 1, 7)) : handleNextStep}
+            disabled={isViewMode ? currentStep >= 7 : !canProceedToNextStep()}
             className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
             下一步

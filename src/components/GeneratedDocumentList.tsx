@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Eye, Edit, Trash2, Download, Settings, X } from 'lucide-react';
-import DocumentFormatManager from './DocumentFormatManager';
+import { Plus, Eye, Edit, Trash2, Download } from 'lucide-react';
 
 interface GeneratedDocument {
   id: string;
@@ -38,7 +37,6 @@ const GeneratedDocumentList: React.FC<GeneratedDocumentListProps> = ({
   const [jumpPage, setJumpPage] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletingDocument, setDeletingDocument] = useState<GeneratedDocument | null>(null);
-  const [showFormatManager, setShowFormatManager] = useState(false);
 
   const handleReset = () => {
     setSearchName('');
@@ -112,34 +110,6 @@ const GeneratedDocumentList: React.FC<GeneratedDocumentListProps> = ({
     );
   };
 
-  if (showFormatManager) {
-    return (
-      <div className="flex flex-col h-full">
-        <div className="bg-white rounded-lg border border-neutral-200 p-6 mb-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-neutral-900">投标文件格式管理</h2>
-            <button
-              onClick={() => setShowFormatManager(false)}
-              className="flex items-center gap-2 px-4 py-2 bg-neutral-100 text-neutral-700 hover:bg-neutral-200 rounded-lg transition-colors"
-            >
-              <X className="w-4 h-4" />
-              返回文件列表
-            </button>
-          </div>
-        </div>
-        <div className="flex-1 overflow-auto">
-          <DocumentFormatManager
-            onSelectFormat={(format) => {
-              console.log('Selected format:', format);
-              alert('格式已应用，您可以在生成文件时使用此格式');
-              setShowFormatManager(false);
-            }}
-          />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -205,13 +175,6 @@ const GeneratedDocumentList: React.FC<GeneratedDocumentListProps> = ({
               >
                 <Plus className="w-4 h-4 mr-1" />
                 新增投标文件
-              </button>
-              <button
-                onClick={() => setShowFormatManager(true)}
-                className="px-4 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center"
-              >
-                <Settings className="w-4 h-4 mr-1" />
-                投标文件格式管理
               </button>
             </div>
           </div>
