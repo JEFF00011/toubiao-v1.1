@@ -92,46 +92,46 @@ const Navigation: React.FC<NavigationProps> = ({ username = '管理员', role = 
 
               {/* Notifications Dropdown */}
               {showNotifications && (
-                <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg border border-neutral-200 z-50">
-                  <div className="p-4 border-b border-neutral-200">
+                <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-neutral-200 z-50">
+                  <div className="px-4 py-3 border-b border-neutral-200">
                     <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-neutral-900">通知中心</h3>
-                      <span className="text-xs px-2 py-1 bg-red-100 text-red-600 rounded-full">
+                      <h3 className="text-sm font-semibold text-neutral-900">通知中心</h3>
+                      <span className="text-xs px-2 py-0.5 bg-red-100 text-red-600 rounded-full font-medium">
                         {notifications.length}
                       </span>
                     </div>
                   </div>
-                  <div className="max-h-96 overflow-y-auto">
+                  <div className="max-h-80 overflow-y-auto">
                     {notifications.length === 0 ? (
-                      <div className="p-8 text-center text-neutral-500">
-                        <Bell className="w-12 h-12 mx-auto mb-3 text-neutral-400" />
-                        <p>暂无通知</p>
+                      <div className="py-12 px-4 text-center">
+                        <Bell className="w-10 h-10 mx-auto mb-2 text-neutral-300" />
+                        <p className="text-sm text-neutral-500">暂无通知</p>
                       </div>
                     ) : (
                       notifications.map(notif => (
                         <div
                           key={notif.id}
                           onClick={() => handleNotificationClick(notif)}
-                          className="p-4 border-b border-neutral-100 hover:bg-neutral-50 transition-colors last:border-b-0 cursor-pointer"
+                          className="px-4 py-3 border-b border-neutral-100 hover:bg-neutral-50 transition-all duration-150 last:border-b-0 cursor-pointer"
                         >
-                          <div className="flex items-start">
-                            <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 mr-3 ${
+                          <div className="flex items-start gap-3">
+                            <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-1.5 ${
                               notif.type === 'warning' ? 'bg-orange-500' : 'bg-blue-500'
                             }`}></div>
-                            <div className="flex-1">
-                              <p className="font-medium text-neutral-900 text-sm">{notif.title}</p>
-                              <p className="text-sm text-neutral-600 mt-1">{notif.message}</p>
-                              <p className="text-xs text-neutral-400 mt-2">{notif.time}</p>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-neutral-900 text-sm leading-snug">{notif.title}</p>
+                              <p className="text-xs text-neutral-600 mt-1 leading-relaxed">{notif.message}</p>
+                              <p className="text-xs text-neutral-400 mt-1.5">{notif.time}</p>
                             </div>
                           </div>
                         </div>
                       ))
                     )}
                   </div>
-                  <div className="p-3 border-t border-neutral-200 text-center">
+                  <div className="px-4 py-2.5 border-t border-neutral-200 bg-neutral-50 rounded-b-xl">
                     <button
                       onClick={handleViewAllNotifications}
-                      className="text-sm text-primary-600 hover:text-primary-700 transition-colors"
+                      className="w-full text-xs text-primary-600 hover:text-primary-700 font-medium transition-colors"
                     >
                       查看全部通知
                     </button>
