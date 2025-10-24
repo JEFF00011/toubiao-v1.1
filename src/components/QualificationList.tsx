@@ -32,7 +32,8 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
         rating: '无',
         validFrom: '2024-01-01',
         validUntil: '2025-12-31',
-        attachments: [{ url: '', name: 'ISO9001证书.pdf' }]
+        isPermanent: false,
+        attachments: [{ id: '1', url: 'https://via.placeholder.com/400x300/4F46E5/FFFFFF?text=ISO9001', name: 'ISO9001证书.pdf' }]
       }
     ];
   });
@@ -906,11 +907,17 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
                       <div className="grid grid-cols-3 gap-3 relative">
                         {editingItem.attachments.map((file, index) => (
                           <div key={file.id || index} className="relative group">
-                            <img
-                              src={file.url || URL.createObjectURL(file)}
-                              alt={file.name}
-                              className="w-full h-32 object-cover rounded-lg border border-neutral-200"
-                            />
+                            {file.url ? (
+                              <img
+                                src={file.url}
+                                alt={file.name}
+                                className="w-full h-32 object-cover rounded-lg border border-neutral-200"
+                              />
+                            ) : (
+                              <div className="w-full h-32 flex items-center justify-center bg-neutral-100 rounded-lg border border-neutral-200">
+                                <span className="text-xs text-neutral-500">{file.name}</span>
+                              </div>
+                            )}
                             <button
                               onClick={() => {
                                 setEditingItem({
