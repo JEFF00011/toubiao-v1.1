@@ -877,12 +877,12 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
 
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    产品描述
+                    产品规格
                   </label>
                   <textarea
                     value={editingProduct.description}
                     onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                    placeholder="请输入产品描述"
+                    placeholder="请输入产品规格"
                     rows={4}
                     className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
