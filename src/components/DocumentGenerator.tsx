@@ -1516,17 +1516,17 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                       )}
                     </div>
                     <div className="mt-2 space-y-1 text-sm text-neutral-600">
-                      <div className="flex items-center gap-4">
-                        <span>页眉: {format.header || '无'}</span>
-                        <span>页脚: {format.footer}</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span>边距: 上{format.margin_top}mm 下{format.margin_bottom}mm 左{format.margin_left}mm 右{format.margin_right}mm</span>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span>正文字体: {format.body_text_style.fontFamily} {format.body_text_style.fontSize}号</span>
-                        <span>行距: {format.body_text_style.lineSpacing}</span>
-                      </div>
+                      {/*<div className="flex items-center gap-4">*/}
+                        {/*<span>页眉: {format.header || '无'}</span>*/}
+                        {/*<span>页脚: {format.footer}</span>*/}
+                      {/*</div>*/}
+                      {/*<div className="flex items-center gap-4">*/}
+                        {/*<span>边距: 上{format.margin_top}mm 下{format.margin_bottom}mm 左{format.margin_left}mm 右{format.margin_right}mm</span>*/}
+                      {/*</div>*/}
+                      {/*<div className="flex items-center gap-4">*/}
+                        {/*<span>正文字体: {format.body_text_style.fontFamily} {format.body_text_style.fontSize}号</span>*/}
+                        {/*<span>行距: {format.body_text_style.lineSpacing}</span>*/}
+                      {/*</div>*/}
                     </div>
                   </div>
                   {selectedFormat?.id === format.id && (
