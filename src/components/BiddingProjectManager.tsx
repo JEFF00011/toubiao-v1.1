@@ -14,6 +14,7 @@ interface BiddingProject {
 interface DocumentDirectoryItem {
   title: string;
   description: string;
+  contentFormat?: string;
   children?: DocumentDirectoryItem[];
 }
 
@@ -84,7 +85,7 @@ interface BiddingProjectManagerProps {
 }
 
 const BiddingProjectManager: React.FC<BiddingProjectManagerProps> = ({ canEdit = true, canDelete = true }) => {
-  const STORAGE_KEY = 'bidding_projects_v4';
+  const STORAGE_KEY = 'bidding_projects_v6';
 
   const [projects, setProjects] = useState<BiddingProject[]>(() => {
     const savedData = localStorage.getItem(STORAGE_KEY);

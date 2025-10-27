@@ -32,4 +32,105 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  .animate-fadeIn {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
+
+[contenteditable]:empty:before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+[contenteditable] {
+  outline: none;
+  line-height: 1.6;
+}
+
+[contenteditable]:focus {
+  outline: 2px solid #3b82f6;
+  outline-offset: -2px;
+}
+
+[contenteditable] h1 {
+  font-size: 1.5em;
+  font-weight: 600;
+  margin: 0.5em 0;
+  color: #1f2937;
+}
+
+[contenteditable] h2 {
+  font-size: 1.3em;
+  font-weight: 600;
+  margin: 0.5em 0;
+  color: #1f2937;
+}
+
+[contenteditable] h3 {
+  font-size: 1.1em;
+  font-weight: 600;
+  margin: 0.5em 0;
+  color: #1f2937;
+}
+
+[contenteditable] ul,
+[contenteditable] ol {
+  margin: 0.5em 0;
+  padding-left: 2em;
+}
+
+[contenteditable] li {
+  margin: 0.25em 0;
+}
+
+[contenteditable] p {
+  margin: 0.5em 0;
+}
+
+[contenteditable] strong {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.prose {
+  line-height: 1.6;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.prose p {
+  margin: 0.5em 0;
+}
+
+.prose ul,
+.prose ol {
+  margin: 0.5em 0;
+  padding-left: 2em;
+}
+
+.prose li {
+  margin: 0.25em 0;
+}
+
+.prose strong {
+  font-weight: 600;
+  color: #1f2937;
 }

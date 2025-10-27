@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ArrowLeft, ArrowRight, FileText, CheckCircle, Building2, FolderTree, Loader, Download, X } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { ArrowLeft, ArrowRight, FileText, CheckCircle, Building2, FolderTree, Loader, Download, X, BookOpen, Plus } from 'lucide-react';
 
 interface BiddingProject {
   id: string;
@@ -39,6 +39,8 @@ interface DirectoryItem {
   title: string;
   level: number;
   wordCount: number;
+  selectedKnowledgeItems?: string[];
+  selectedReferenceItems?: string[];
   children: DirectoryItem[];
 }
 
@@ -121,6 +123,16 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   const [companySearch, setCompanySearch] = useState('');
   const [projectPage, setProjectPage] = useState(1);
   const [companyPage, setCompanyPage] = useState(1);
+  const [isCompanyDropdownOpen, setIsCompanyDropdownOpen] = useState(false);
+  const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
+  const [isKnowledgeModalOpen, setIsKnowledgeModalOpen] = useState(false);
+  const [isReferenceModalOpen, setIsReferenceModalOpen] = useState(false);
+  const [currentDirectoryItem, setCurrentDirectoryItem] = useState<DirectoryItem | null>(null);
+  const [currentDirectoryType, setCurrentDirectoryType] = useState<'commercial' | 'technical'>('commercial');
+  const [tempSelectedKnowledgeIds, setTempSelectedKnowledgeIds] = useState<string[]>([]);
+  const [tempSelectedReferenceIds, setTempSelectedReferenceIds] = useState<string[]>([]);
+  const companyDropdownRef = React.useRef<HTMLDivElement>(null);
+  const projectDropdownRef = React.useRef<HTMLDivElement>(null);
   const ITEMS_PER_PAGE = 3;
 
   React.useEffect(() => {
@@ -135,18 +147,23 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
   }, [preSelectedProject]);
 
   React.useEffect(() => {
-    if (!selectedProject && !preSelectedProject && MOCK_PROJECTS.length > 0) {
-      const filteredProjects = MOCK_PROJECTS.filter(project =>
-        project.projectName.toLowerCase().includes(projectSearch.toLowerCase())
-      );
-      if (filteredProjects.length > 0) {
-        handleProjectSelect(filteredProjects[0]);
+    if ((isEditMode || isViewMode) && existingDocument?.projectId && MOCK_PROJECTS.length > 0) {
+      const project = MOCK_PROJECTS.find(p => p.id === existingDocument.projectId);
+      if (project && (!selectedProject || selectedProject.id !== project.id)) {
+        setSelectedProject(project);
+        setIsProjectDropdownOpen(false);
+        if (project.documentDirectory?.commercial) {
+          setCommercialDirectory(parseDirectory(project.documentDirectory.commercial));
+        }
+        if (project.documentDirectory?.technical) {
+          setTechnicalDirectory(parseDirectory(project.documentDirectory.technical));
+        }
       }
     }
-  }, []);
+  }, [isEditMode, isViewMode, existingDocument, selectedProject]);
 
   React.useEffect(() => {
-    if (!selectedCompany && MOCK_COMPANIES.length > 0) {
+    if ((isEditMode || isViewMode) && !selectedCompany && MOCK_COMPANIES.length > 0) {
       const filteredCompanies = MOCK_COMPANIES.filter(company =>
         company.name.toLowerCase().includes(companySearch.toLowerCase())
       );
@@ -154,6 +171,22 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         handleCompanySelect(filteredCompanies[0]);
       }
     }
+  }, [isEditMode, isViewMode]);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (companyDropdownRef.current && !companyDropdownRef.current.contains(event.target as Node)) {
+        setIsCompanyDropdownOpen(false);
+      }
+      if (projectDropdownRef.current && !projectDropdownRef.current.contains(event.target as Node)) {
+        setIsProjectDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, []);
 
   const MOCK_PROJECTS: BiddingProject[] = [
@@ -392,6 +425,17 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         { id: 'temp_4', name: '项目实施计划模板', uploadTime: '2024-09-25', selected: false },
         { id: 'temp_5', name: '培训方案模板', uploadTime: '2024-09-10', selected: false }
       ]
+    },
+    {
+      id: 'otherFiles',
+      name: '其他参考文件',
+      items: [
+        { id: 'other_1', name: '行业标准规范文档', uploadTime: '2024-10-20', selected: false },
+        { id: 'other_2', name: '产品说明书', uploadTime: '2024-10-15', selected: false },
+        { id: 'other_3', name: '技术白皮书', uploadTime: '2024-10-10', selected: false },
+        { id: 'other_4', name: '合作协议模板', uploadTime: '2024-09-30', selected: false },
+        { id: 'other_5', name: '项目案例分析报告', uploadTime: '2024-09-20', selected: false }
+      ]
     }
   ];
 
@@ -441,15 +485,22 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     });
   };
 
-  const handleProjectSelect = (project: BiddingProject) => {
+  const handleProjectSelect = useCallback((project: BiddingProject) => {
     setSelectedProject(project);
+    setIsProjectDropdownOpen(false);
 
-    if (project.documentDirectory.commercial) {
+    if (project.documentDirectory?.commercial) {
       setCommercialDirectory(parseDirectory(project.documentDirectory.commercial));
     }
-    if (project.documentDirectory.technical) {
+    if (project.documentDirectory?.technical) {
       setTechnicalDirectory(parseDirectory(project.documentDirectory.technical));
     }
+  }, []);
+
+  const handleChangeProject = () => {
+    setSelectedProject(null);
+    setProjectSearch('');
+    setIsProjectDropdownOpen(false);
   };
 
   const handleCompanySelect = (company: Company) => {
@@ -532,8 +583,20 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     alert('导出为 Word 文档功能');
   };
 
+  const handleCompanySelectFromDropdown = (company: Company) => {
+    handleCompanySelect(company);
+    setIsCompanyDropdownOpen(false);
+    setCompanySearch('');
+  };
+
+  const handleChangeCompany = () => {
+    setSelectedCompany(null);
+    setCompanySearch('');
+    setIsCompanyDropdownOpen(true);
+  };
+
   const handleNextStep = () => {
-    setCurrentStep(prev => Math.min(prev + 1, 7));
+    setCurrentStep(prev => Math.min(prev + 1, 6));
   };
 
   const handlePrevStep = () => {
@@ -545,56 +608,75 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       case 1:
         return documentName.trim() !== '';
       case 2:
-        return selectedProject !== null;
-      case 3:
-        return fileTypes.length > 0;
-      case 4:
         return selectedCompany !== null;
+      case 3:
+        return selectedProject !== null && fileTypes.length > 0;
+      case 4:
+        return true;
       case 5:
-        return knowledgeCategories.some(cat => cat.items.some(item => item.selected));
-      case 6:
         return selectedFormat !== null;
       default:
         return true;
     }
   };
 
-  const renderDirectoryTree = (items: DirectoryItem[], level: number = 0, onUpdate: (id: string, count: number) => void) => {
-    return items.map(item => (
-      <div key={item.id} style={{ paddingLeft: `${level * 24}px` }}>
-        <div className="flex items-center justify-between py-2 border-b border-neutral-100">
-          <div className="flex-1">
-            <span className={`text-sm ${level === 0 ? 'font-semibold text-neutral-900' : 'text-neutral-700'}`}>
-              {item.title}
-            </span>
+  const renderDirectoryTree = (items: DirectoryItem[], level: number = 0, onUpdate: (id: string, count: number) => void, directoryType: 'commercial' | 'technical' = 'commercial') => {
+    return items.map(item => {
+      const selectedCount = item.selectedKnowledgeItems?.length || 0;
+
+      return (
+        <div key={item.id} style={{ paddingLeft: `${level * 24}px` }}>
+          <div className="flex items-center justify-between py-2 border-b border-neutral-100 gap-3">
+            <div className="flex-1 min-w-0">
+              <span className={`text-sm ${level === 0 ? 'font-semibold text-neutral-900' : 'text-neutral-700'}`}>
+                {item.title}
+              </span>
+            </div>
+            <div className="flex items-center space-x-2 flex-shrink-0">
+              <button
+                onClick={() => {
+                  setCurrentDirectoryItem(item);
+                  setCurrentDirectoryType(directoryType);
+                  setTempSelectedKnowledgeIds(item.selectedKnowledgeItems || []);
+                  setIsKnowledgeModalOpen(true);
+                }}
+                disabled={isViewMode}
+                className={`flex items-center gap-1 px-2 py-1 text-xs rounded transition-colors ${
+                  selectedCount > 0
+                    ? 'bg-primary-100 text-primary-700 hover:bg-primary-200'
+                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                title="选择知识库资料"
+              >
+                <BookOpen className="w-3.5 h-3.5" />
+                <span>{selectedCount > 0 ? `已选${selectedCount}` : '选择资料'}</span>
+              </button>
+              <input
+                type="number"
+                value={item.wordCount}
+                onChange={(e) => {
+                  const newCount = parseInt(e.target.value) || 0;
+                  onUpdate(item.id, newCount);
+                }}
+                disabled={isViewMode}
+                className="w-20 px-2 py-1 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
+              />
+              <span className="text-sm text-neutral-500">字</span>
+            </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <input
-              type="number"
-              value={item.wordCount}
-              onChange={(e) => {
-                const newCount = parseInt(e.target.value) || 0;
-                onUpdate(item.id, newCount);
-              }}
-              disabled={isViewMode}
-              className="w-24 px-2 py-1 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
-            />
-            <span className="text-sm text-neutral-500">字</span>
-          </div>
+          {item.children.length > 0 && renderDirectoryTree(item.children, level + 1, onUpdate, directoryType)}
         </div>
-        {item.children.length > 0 && renderDirectoryTree(item.children, level + 1, onUpdate)}
-      </div>
-    ));
+      );
+    });
   };
 
   const steps = [
-    { number: 1, name: '文件名称' },
-    { number: 2, name: '招标项目' },
-    { number: 3, name: '选择文件' },
-    { number: 4, name: '企业知识库' },
-    { number: 5, name: '知识资料' },
-    { number: 6, name: '文件格式' },
-    { number: 7, name: '生成文件' }
+    { number: 1, name: '项目名称' },
+    { number: 2, name: '企业知识库' },
+    { number: 3, name: '招标项目' },
+    { number: 4, name: '章节设置' },
+    { number: 5, name: '文件格式' },
+    { number: 6, name: '生成文件' }
   ];
 
   const renderStepIndicator = () => (
@@ -692,7 +774,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       <div className="max-w-4xl mx-auto">
         <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            第二步：选择对应的招标项目，系统将根据该项目解析的文件目录结构生成投标文件。
+            第三步：选择对应的招标项目，系统将根据该项目解析的文件目录结构生成投标文件。
           </p>
         </div>
         <h3 className="text-lg font-medium text-neutral-900 mb-4">选择招标项目 <span className="text-red-500">*</span></h3>
@@ -777,65 +859,28 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
   const renderStep3 = () => (
     <div className="max-w-4xl mx-auto">
-      <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
+      <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
         <p className="text-sm text-blue-800">
-          第三步：选择需要生成的招标文件类型，并为每个目录章节设置生成字数。这些文件与招标项目中解析出来的投标文件对应。
+          第四步：为每个章节设置生成字数，并可选择对应的知识库资料。如果不选择，系统将自动匹配最合适的资料。
         </p>
-      </div>
-
-      <div className="mb-6">
-        <h3 className="text-lg font-medium text-neutral-900 mb-4">选择需要生成的文件类型 <span className="text-red-500">*</span></h3>
-        <div className="grid grid-cols-2 gap-4">
-          <label className={`flex items-center p-4 border-2 rounded-lg ${!isViewMode ? 'cursor-pointer hover:bg-neutral-50' : 'cursor-not-allowed bg-neutral-50'} transition-colors ${
-            fileTypes.includes('commercial') ? 'border-primary-600 bg-primary-50' : 'border-neutral-300'
-          }`}>
-            <input
-              type="checkbox"
-              checked={fileTypes.includes('commercial')}
-              onChange={() => handleFileTypeToggle('commercial')}
-              disabled={isViewMode}
-              className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500 disabled:cursor-not-allowed"
-            />
-            <div className="ml-3">
-              <div className="text-sm font-semibold text-neutral-900">商务文件</div>
-              <div className="text-xs text-neutral-600 mt-0.5">资格证明、商务响应、报价等</div>
-            </div>
-          </label>
-          <label className={`flex items-center p-4 border-2 rounded-lg ${!isViewMode ? 'cursor-pointer hover:bg-neutral-50' : 'cursor-not-allowed bg-neutral-50'} transition-colors ${
-            fileTypes.includes('technical') ? 'border-primary-600 bg-primary-50' : 'border-neutral-300'
-          }`}>
-            <input
-              type="checkbox"
-              checked={fileTypes.includes('technical')}
-              onChange={() => handleFileTypeToggle('technical')}
-              disabled={isViewMode}
-              className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
-            />
-            <div className="ml-3">
-              <div className="text-sm font-semibold text-neutral-900">技术文件</div>
-              <div className="text-xs text-neutral-600 mt-0.5">技术方案、实施方案等</div>
-            </div>
-          </label>
-        </div>
       </div>
 
       {fileTypes.length === 0 ? (
         <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 text-center">
-          <p className="text-amber-800">请先选择需要生成的文件类型</p>
+          <p className="text-amber-800">请先在第三步选择需要生成的文件类型</p>
         </div>
       ) : (
         <div className="space-y-6">
-          <h3 className="text-lg font-medium text-neutral-900">目录章节字数设置</h3>
+          <h3 className="text-lg font-medium text-neutral-900">目录章节设置</h3>
 
           {fileTypes.includes('commercial') && (
             <div className="border border-neutral-200 rounded-lg overflow-hidden">
-              <div className="bg-green-50 px-4 py-3 border-b border-green-200 flex items-center justify-between">
+              <div className="bg-green-50 px-4 py-3 border-b border-green-200">
                 <span className="text-sm font-semibold text-green-900">商务文件目录结构</span>
-                <span className="text-sm font-medium text-green-700">字数设置</span>
               </div>
               <div className="max-h-96 overflow-y-auto p-4">
                 {commercialDirectory.length > 0 ? (
-                  renderDirectoryTree(commercialDirectory, 0, updateCommercialWordCount)
+                  renderDirectoryTree(commercialDirectory, 0, updateCommercialWordCount, 'commercial')
                 ) : (
                   <p className="text-center text-neutral-500 py-8">该项目暂无商务文件目录</p>
                 )}
@@ -845,13 +890,12 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
           {fileTypes.includes('technical') && (
             <div className="border border-neutral-200 rounded-lg overflow-hidden">
-              <div className="bg-blue-50 px-4 py-3 border-b border-blue-200 flex items-center justify-between">
+              <div className="bg-blue-50 px-4 py-3 border-b border-blue-200">
                 <span className="text-sm font-semibold text-blue-900">技术文件目录结构</span>
-                <span className="text-sm font-medium text-blue-700">字数设置</span>
               </div>
               <div className="max-h-96 overflow-y-auto p-4">
                 {technicalDirectory.length > 0 ? (
-                  renderDirectoryTree(technicalDirectory, 0, updateTechnicalWordCount)
+                  renderDirectoryTree(technicalDirectory, 0, updateTechnicalWordCount, 'technical')
                 ) : (
                   <p className="text-center text-neutral-500 py-8">该项目暂无技术文件目录</p>
                 )}
@@ -876,7 +920,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       <div className="max-w-4xl mx-auto">
         <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            第四步：选择企业知识库，系统将使用该企业的基础信息、资质、业绩等资料生成投标文件。
+            第二步：选择企业知识库，系统将使用该企业的基础信息、资质、业绩等资料生成投标文件。
           </p>
         </div>
         <h3 className="text-lg font-medium text-neutral-900 mb-4">选择企业知识库 <span className="text-red-500">*</span></h3>
@@ -1064,6 +1108,13 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     }
 
     if (category.id === 'templates' && filteredItems.length > 0) {
+      filteredItems = filteredItems.sort((a, b) => {
+        if (!a.uploadTime || !b.uploadTime) return 0;
+        return new Date(b.uploadTime).getTime() - new Date(a.uploadTime).getTime();
+      });
+    }
+
+    if (category.id === 'otherFiles' && filteredItems.length > 0) {
       filteredItems = filteredItems.sort((a, b) => {
         if (!a.uploadTime || !b.uploadTime) return 0;
         return new Date(b.uploadTime).getTime() - new Date(a.uploadTime).getTime();
@@ -1321,6 +1372,20 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       );
     }
 
+    if (category.id === 'otherFiles') {
+      return (
+        <div className="flex items-center gap-2 flex-wrap">
+          <input
+            type="text"
+            placeholder="文件名称"
+            value={searches.name || ''}
+            onChange={(e) => handleSearchChange(category.id, 'name', e.target.value)}
+            className="text-xs px-2 py-1 border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 w-40"
+          />
+        </div>
+      );
+    }
+
     return null;
   };
 
@@ -1414,7 +1479,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       <div className="max-w-2xl mx-auto">
         <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            第六步：选择投标文件格式，系统将使用该格式生成投标文件。
+            第五步：选择投标文件格式，系统将使用该格式生成投标文件。
           </p>
         </div>
         <h3 className="text-lg font-medium text-neutral-900 mb-4">
@@ -1494,8 +1559,9 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     const selectedCount = filteredItems.filter(item => item.selected).length;
 
     const displayCategories = knowledgeCategories.filter(cat => !productCategories.includes(cat.id) && !personnelCategories.includes(cat.id));
-    const categoriesBeforeProduct = displayCategories.filter(cat => cat.id !== 'templates');
+    const categoriesBeforeProduct = displayCategories.filter(cat => cat.id !== 'templates' && cat.id !== 'otherFiles');
     const templatesCategory = displayCategories.find(cat => cat.id === 'templates');
+    const otherFilesCategory = displayCategories.find(cat => cat.id === 'otherFiles');
 
     const allProductCategories = knowledgeCategories.filter(cat => productCategories.includes(cat.id));
     const totalProductSelected = allProductCategories.reduce((sum, cat) => sum + cat.items.filter(item => item.selected).length, 0);
@@ -1766,6 +1832,527 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     );
   };
 
+  const renderStep2Combined = () => {
+    const filteredCompanies = MOCK_COMPANIES.filter(company =>
+      company.name.toLowerCase().includes(companySearch.toLowerCase())
+    );
+
+    const productCategories = ['productionEquipment', 'testingEquipment', 'companyProducts'];
+    const personnelCategories = ['legalPerson', 'authorizedDelegate', 'otherPersonnel'];
+    const isProductTab = activeKnowledgeTab === 'product';
+    const isPersonnelTab = activeKnowledgeTab === 'personnel';
+
+    const activeCategory = isProductTab
+      ? knowledgeCategories.find(cat => cat.id === activeProductTab)
+      : isPersonnelTab
+      ? knowledgeCategories.find(cat => cat.id === activePersonnelTab)
+      : knowledgeCategories.find(cat => cat.id === activeKnowledgeTab);
+
+    const filteredItems = activeCategory ? getFilteredItems(activeCategory) : [];
+    const selectedCount = filteredItems.filter(item => item.selected).length;
+
+    const displayCategories = knowledgeCategories.filter(cat => !productCategories.includes(cat.id) && !personnelCategories.includes(cat.id));
+    const categoriesBeforeProduct = displayCategories.filter(cat => cat.id !== 'templates' && cat.id !== 'otherFiles');
+    const templatesCategory = displayCategories.find(cat => cat.id === 'templates');
+    const otherFilesCategory = displayCategories.find(cat => cat.id === 'otherFiles');
+
+    const allProductCategories = knowledgeCategories.filter(cat => productCategories.includes(cat.id));
+    const totalProductSelected = allProductCategories.reduce((sum, cat) => sum + cat.items.filter(item => item.selected).length, 0);
+    const totalProductCount = allProductCategories.reduce((sum, cat) => sum + cat.items.length, 0);
+
+    const allPersonnelCategories = knowledgeCategories.filter(cat => personnelCategories.includes(cat.id));
+    const totalPersonnelSelected = allPersonnelCategories.reduce((sum, cat) => sum + cat.items.filter(item => item.selected).length, 0);
+    const totalPersonnelCount = allPersonnelCategories.reduce((sum, cat) => sum + cat.items.length, 0);
+
+    return (
+      <div className="max-w-4xl mx-auto space-y-6 pb-32">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            第二步：选择企业知识库，并选择需要使用的企业资料。系统将使用该企业的基础信息、资质、业绩等资料生成投标文件。
+          </p>
+        </div>
+
+        <div className="bg-white rounded-lg border border-neutral-200 p-6">
+          <h3 className="text-lg font-medium text-neutral-900 mb-4">选择企业知识库 <span className="text-red-500">*</span></h3>
+
+          {!selectedCompany ? (
+            <div className="relative mb-4" ref={companyDropdownRef}>
+              <input
+                type="text"
+                placeholder="点击选择企业或输入企业名称搜索..."
+                value={companySearch}
+                onChange={(e) => setCompanySearch(e.target.value)}
+                onFocus={() => setIsCompanyDropdownOpen(true)}
+                disabled={isViewMode}
+                className="w-full px-4 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed text-base"
+              />
+
+              {isCompanyDropdownOpen && !isViewMode && (
+                <div className="absolute z-[100] w-full mt-2 bg-white border border-neutral-300 rounded-lg shadow-xl overflow-hidden max-h-[400px]">
+                  {filteredCompanies.length === 0 ? (
+                    <div className="p-4 text-center text-neutral-500">
+                      未找到匹配的企业
+                    </div>
+                  ) : (
+                    <div className="overflow-y-auto">
+                      {filteredCompanies.map(company => (
+                        <div
+                          key={company.id}
+                          onClick={() => handleCompanySelectFromDropdown(company)}
+                          className="px-4 py-3 hover:bg-primary-50 cursor-pointer transition-colors border-b border-neutral-100 last:border-b-0"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <Building2 className="w-5 h-5 text-primary-600 flex-shrink-0" />
+                            <span className="text-sm text-neutral-900">{company.name}</span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="px-4 py-3 bg-primary-50 border border-primary-300 rounded-lg flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-white rounded shadow-sm">
+                  <Building2 className="w-5 h-5 text-primary-600" />
+                </div>
+                <div>
+                  <div className="text-xs text-neutral-500">已选择的企业</div>
+                  <div className="font-medium text-neutral-900">{selectedCompany.name}</div>
+                </div>
+              </div>
+              {!isViewMode && (
+                <button
+                  onClick={handleChangeCompany}
+                  className="px-3 py-1.5 text-sm font-medium text-primary-600 hover:text-primary-700 bg-white hover:bg-primary-50 border border-primary-300 rounded transition-colors"
+                >
+                  更换企业
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {selectedCompany && (
+          <div className="bg-white rounded-lg border border-neutral-200 p-6 animate-fadeIn">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-medium text-neutral-900">选择知识库资料 <span className="text-red-500">*</span></h3>
+              <span className="text-xs text-neutral-500 bg-neutral-100 px-3 py-1 rounded-full">
+                为 {selectedCompany.name} 选择资料
+              </span>
+            </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+              <p className="text-sm text-amber-800">
+                请选择需要使用的企业知识库资料，勾选的资料将作为生成投标文件的数据来源。支持按类型筛选查找。
+              </p>
+            </div>
+
+            <div className="border-b border-neutral-200 mb-4">
+              <div className="flex space-x-1 overflow-x-auto">
+                {categoriesBeforeProduct.map(category => {
+                  const categorySelectedCount = category.items.filter(item => item.selected).length;
+                  const categoryTotalCount = category.items.length;
+
+                  return (
+                    <button
+                      key={category.id}
+                      onClick={() => setActiveKnowledgeTab(category.id)}
+                      className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                        activeKnowledgeTab === category.id
+                          ? 'border-primary-600 text-primary-600'
+                          : 'border-transparent text-neutral-600 hover:text-neutral-900 hover:border-neutral-300'
+                      }`}
+                    >
+                      {category.name}
+                      {categorySelectedCount > 0 && (
+                        <span className={`ml-2 px-1.5 py-0.5 text-xs rounded ${
+                          activeKnowledgeTab === category.id
+                            ? 'bg-primary-100 text-primary-700'
+                            : 'bg-neutral-100 text-neutral-600'
+                        }`}>
+                          {categorySelectedCount}/{categoryTotalCount}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+                {allPersonnelCategories.length > 0 && (
+                  <button
+                    onClick={() => {
+                      setActiveKnowledgeTab('personnel');
+                    }}
+                    className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                      isPersonnelTab
+                        ? 'border-primary-600 text-primary-600'
+                        : 'border-transparent text-neutral-600 hover:text-neutral-900 hover:border-neutral-300'
+                    }`}
+                  >
+                    人员信息
+                    {totalPersonnelSelected > 0 && (
+                      <span className={`ml-2 px-1.5 py-0.5 text-xs rounded ${
+                        isPersonnelTab
+                          ? 'bg-primary-100 text-primary-700'
+                          : 'bg-neutral-100 text-neutral-600'
+                      }`}>
+                        {totalPersonnelSelected}/{totalPersonnelCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+                {allProductCategories.length > 0 && (
+                  <button
+                    onClick={() => {
+                      setActiveKnowledgeTab('product');
+                    }}
+                    className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                      isProductTab
+                        ? 'border-primary-600 text-primary-600'
+                        : 'border-transparent text-neutral-600 hover:text-neutral-900 hover:border-neutral-300'
+                    }`}
+                  >
+                    产品信息
+                    {totalProductSelected > 0 && (
+                      <span className={`ml-2 px-1.5 py-0.5 text-xs rounded ${
+                        isProductTab
+                          ? 'bg-primary-100 text-primary-700'
+                          : 'bg-neutral-100 text-neutral-600'
+                      }`}>
+                        {totalProductSelected}/{totalProductCount}
+                      </span>
+                    )}
+                  </button>
+                )}
+                {templatesCategory && (
+                  <button
+                    key={templatesCategory.id}
+                    onClick={() => setActiveKnowledgeTab(templatesCategory.id)}
+                    className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                      activeKnowledgeTab === templatesCategory.id
+                        ? 'border-primary-600 text-primary-600'
+                        : 'border-transparent text-neutral-600 hover:text-neutral-900 hover:border-neutral-300'
+                    }`}
+                  >
+                    {templatesCategory.name}
+                    {templatesCategory.items.filter(item => item.selected).length > 0 && (
+                      <span className={`ml-2 px-1.5 py-0.5 text-xs rounded ${
+                        activeKnowledgeTab === templatesCategory.id
+                          ? 'bg-primary-100 text-primary-700'
+                          : 'bg-neutral-100 text-neutral-600'
+                      }`}>
+                        {templatesCategory.items.filter(item => item.selected).length}/{templatesCategory.items.length}
+                      </span>
+                    )}
+                  </button>
+                )}
+                {otherFilesCategory && (
+                  <button
+                    key={otherFilesCategory.id}
+                    onClick={() => setActiveKnowledgeTab(otherFilesCategory.id)}
+                    className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
+                      activeKnowledgeTab === otherFilesCategory.id
+                        ? 'border-primary-600 text-primary-600'
+                        : 'border-transparent text-neutral-600 hover:text-neutral-900 hover:border-neutral-300'
+                    }`}
+                  >
+                    {otherFilesCategory.name}
+                    {otherFilesCategory.items.filter(item => item.selected).length > 0 && (
+                      <span className={`ml-2 px-1.5 py-0.5 text-xs rounded ${
+                        activeKnowledgeTab === otherFilesCategory.id
+                          ? 'bg-primary-100 text-primary-700'
+                          : 'bg-neutral-100 text-neutral-600'
+                      }`}>
+                        {otherFilesCategory.items.filter(item => item.selected).length}/{otherFilesCategory.items.length}
+                      </span>
+                    )}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {isPersonnelTab && (
+              <div className="mb-4">
+                <div className="border-b border-neutral-200">
+                  <div className="flex space-x-2">
+                    {allPersonnelCategories.map(category => {
+                      const categorySelectedCount = category.items.filter(item => item.selected).length;
+                      const categoryTotalCount = category.items.length;
+                      const personnelTabNames = {
+                        legalPerson: '法人',
+                        authorizedDelegate: '授权委托人',
+                        otherPersonnel: '其他人员'
+                      };
+
+                      return (
+                        <button
+                          key={category.id}
+                          onClick={() => setActivePersonnelTab(category.id as any)}
+                          className={`px-4 py-2 text-sm font-medium transition-colors rounded-t ${
+                            activePersonnelTab === category.id
+                              ? 'bg-primary-600 text-white'
+                              : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                          }`}
+                        >
+                          {personnelTabNames[category.id as keyof typeof personnelTabNames]}
+                          {categorySelectedCount > 0 && (
+                            <span className={`ml-2 px-1.5 py-0.5 text-xs rounded ${
+                              activePersonnelTab === category.id
+                                ? 'bg-primary-700 text-white'
+                                : 'bg-neutral-200 text-neutral-700'
+                            }`}>
+                              {categorySelectedCount}/{categoryTotalCount}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {activePersonnelTab === 'authorizedDelegate' && (
+                  <div className="mt-2 bg-blue-50 border border-blue-200 rounded p-3">
+                    <p className="text-xs text-blue-800">
+                      <span className="font-medium">提示：</span>授权委托人可从企业所有人员（除法人外）中选择，选中的人员将作为投标项目的授权委托人。
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {isProductTab && (
+              <div className="mb-4 border-b border-neutral-200">
+                <div className="flex space-x-2">
+                  {allProductCategories.map(category => {
+                    const categorySelectedCount = category.items.filter(item => item.selected).length;
+                    const categoryTotalCount = category.items.length;
+                    const productTabNames = {
+                      productionEquipment: '生产设备',
+                      testingEquipment: '检测设备',
+                      companyProducts: '企业产品'
+                    };
+
+                    return (
+                      <button
+                        key={category.id}
+                        onClick={() => setActiveProductTab(category.id as any)}
+                        className={`px-4 py-2 text-sm font-medium transition-colors rounded-t ${
+                          activeProductTab === category.id
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                        }`}
+                      >
+                        {productTabNames[category.id as keyof typeof productTabNames]}
+                        {categorySelectedCount > 0 && (
+                          <span className={`ml-2 px-1.5 py-0.5 text-xs rounded ${
+                            activeProductTab === category.id
+                              ? 'bg-primary-700 text-white'
+                              : 'bg-neutral-200 text-neutral-700'
+                          }`}>
+                            {categorySelectedCount}/{categoryTotalCount}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {activeCategory && (
+              <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                <div className="bg-neutral-50 px-4 py-3 border-b border-neutral-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-semibold text-neutral-900">{activeCategory.name}</span>
+                      <span className="text-xs text-neutral-600">({selectedCount}/{filteredItems.length})</span>
+                    </div>
+                    {!isViewMode && (
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => toggleCategoryAll(activeCategory.id, true)}
+                          className="text-xs text-primary-600 hover:text-primary-800"
+                        >
+                          全选
+                        </button>
+                        <span className="text-neutral-300">|</span>
+                        <button
+                          onClick={() => toggleCategoryAll(activeCategory.id, false)}
+                          className="text-xs text-neutral-600 hover:text-neutral-800"
+                        >
+                          取消
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-3">
+                    {renderSearchFields(activeCategory)}
+                  </div>
+                </div>
+                <div className="p-4 space-y-2 max-h-96 overflow-y-auto">
+                  {filteredItems.length === 0 ? (
+                    <p className="text-center text-neutral-500 py-4">暂无符合条件的资料</p>
+                  ) : (
+                    filteredItems.map(item => {
+                      const isExpired = (activeCategory.id === 'qualification' && item.status === 'expired');
+                      const isResigned = (activeCategory.id === 'personnel' && item.status === 'resigned');
+                      const isDisabled = isViewMode || isExpired || isResigned;
+
+                      return (
+                        <label
+                          key={item.id}
+                          className={`flex items-center p-3 rounded border border-transparent ${
+                            !isDisabled ? 'hover:bg-neutral-50 hover:border-neutral-200 cursor-pointer' : 'cursor-not-allowed bg-neutral-50 opacity-60'
+                          } ${item.selected ? 'bg-primary-50 border-primary-200' : ''}`}
+                          title={isExpired ? '已过期资质无法选择' : isResigned ? '离职人员无法选择' : ''}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={item.selected}
+                            onChange={() => toggleKnowledgeItem(activeCategory.id, item.id)}
+                            disabled={isDisabled}
+                            className="w-4 h-4 text-primary-600 rounded focus:ring-primary-500 disabled:cursor-not-allowed flex-shrink-0"
+                          />
+                          {renderItemDisplay(item, activeCategory)}
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderStep3Combined = () => {
+    const filteredProjects = MOCK_PROJECTS
+      .filter(project =>
+        project.projectName.toLowerCase().includes(projectSearch.toLowerCase())
+      )
+      .sort((a, b) => {
+        return new Date(b.uploadTime).getTime() - new Date(a.uploadTime).getTime();
+      });
+
+    const totalPages = Math.ceil(filteredProjects.length / ITEMS_PER_PAGE);
+    const startIndex = (projectPage - 1) * ITEMS_PER_PAGE;
+    const paginatedProjects = filteredProjects.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+    return (
+      <div className="max-w-4xl mx-auto space-y-6 pb-32">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            第三步：选择对应的招标项目，并选择需要生成的投标文件类型。系统将根据该项目解析的文件目录结构生成投标文件。
+          </p>
+        </div>
+
+        <div className="bg-white rounded-lg border border-neutral-200 p-6">
+          <h3 className="text-lg font-medium text-neutral-900 mb-4">选择招标项目 <span className="text-red-500">*</span></h3>
+
+          {!selectedProject && !preSelectedProject ? (
+            <div className="relative mb-4" ref={projectDropdownRef}>
+              <input
+                type="text"
+                placeholder="点击选择招标项目或输入项目名称搜索..."
+                value={projectSearch}
+                onChange={(e) => setProjectSearch(e.target.value)}
+                onFocus={() => setIsProjectDropdownOpen(true)}
+                disabled={isViewMode}
+                className="w-full px-4 py-2.5 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed text-base"
+              />
+
+              {isProjectDropdownOpen && !isViewMode && (
+                <div className="absolute z-[100] w-full mt-2 bg-white border border-neutral-300 rounded-lg shadow-xl overflow-hidden max-h-[400px]">
+                  {filteredProjects.length === 0 ? (
+                    <div className="p-4 text-center text-neutral-500">
+                      未找到匹配的项目
+                    </div>
+                  ) : (
+                    <div className="overflow-y-auto">
+                      {filteredProjects.map(project => (
+                        <div
+                          key={project.id}
+                          onClick={() => handleProjectSelect(project)}
+                          className="px-4 py-3 hover:bg-primary-50 cursor-pointer transition-colors border-b border-neutral-100 last:border-b-0"
+                        >
+                          <div className="flex items-center space-x-3">
+                            <FolderTree className="w-5 h-5 text-primary-600 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm text-neutral-900 font-medium">{project.projectName}</div>
+                              <div className="text-xs text-neutral-500 mt-0.5">上传时间：{project.uploadTime}</div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="px-4 py-3 bg-primary-50 border border-primary-300 rounded-lg flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-white rounded shadow-sm">
+                  <FolderTree className="w-5 h-5 text-primary-600" />
+                </div>
+                <div>
+                  <div className="text-xs text-neutral-500">已选择的招标项目</div>
+                  <div className="font-medium text-neutral-900">{(selectedProject || preSelectedProject)?.projectName}</div>
+                </div>
+              </div>
+              {!isViewMode && !preSelectedProject && (
+                <button
+                  onClick={handleChangeProject}
+                  className="px-3 py-1.5 text-sm font-medium text-primary-600 hover:text-primary-700 bg-white hover:bg-primary-50 border border-primary-300 rounded transition-colors"
+                >
+                  更换项目
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {(selectedProject || preSelectedProject) && (
+          <div className="bg-white rounded-lg border border-neutral-200 p-6">
+            <h3 className="text-lg font-medium text-neutral-900 mb-4">选择需要生成的文件类型 <span className="text-red-500">*</span></h3>
+            <div className="space-y-3">
+              <label className={`flex items-center p-4 border-2 rounded-lg ${!isViewMode ? 'cursor-pointer hover:bg-neutral-50' : 'cursor-not-allowed bg-neutral-50'} transition-colors ${
+                fileTypes.includes('commercial') ? 'border-primary-600 bg-primary-50' : 'border-neutral-300'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={fileTypes.includes('commercial')}
+                  onChange={() => handleFileTypeToggle('commercial')}
+                  disabled={isViewMode}
+                  className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500 disabled:cursor-not-allowed"
+                />
+                <span className="ml-3 font-medium text-neutral-900">商务文件</span>
+              </label>
+              <label className={`flex items-center p-4 border-2 rounded-lg ${!isViewMode ? 'cursor-pointer hover:bg-neutral-50' : 'cursor-not-allowed bg-neutral-50'} transition-colors ${
+                fileTypes.includes('technical') ? 'border-primary-600 bg-primary-50' : 'border-neutral-300'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={fileTypes.includes('technical')}
+                  onChange={() => handleFileTypeToggle('technical')}
+                  disabled={isViewMode}
+                  className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500 disabled:cursor-not-allowed"
+                />
+                <span className="ml-3 font-medium text-neutral-900">技术文件</span>
+              </label>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderStep4New = () => {
+    return renderStep3();
+  };
+
   const renderStep7 = () => {
     if (isComplete || isViewMode) {
       return (
@@ -1800,7 +2387,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       <div className="max-w-2xl mx-auto">
         <div className="mb-4 bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            第七步：确认所有配置信息，点击开始生成按钮，系统将自动生成投标文件。
+            第六步：确认所有配置信息，点击开始生成按钮，系统将自动生成投标文件。
           </p>
         </div>
         <div className="text-center mb-8">
@@ -1904,7 +2491,14 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             </div>
           </div>
         ) : (
-          <div className="text-center">
+          <div className="flex justify-center items-center gap-4">
+            <button
+              onClick={handlePrevStep}
+              className="px-6 py-3 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors font-medium flex items-center"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              上一步
+            </button>
             <button
               onClick={handleGenerate}
               className="px-8 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
@@ -1917,21 +2511,249 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     );
   };
 
+  const handleKnowledgeSelection = (selectedIds: string[]) => {
+    if (!currentDirectoryItem) return;
+
+    const updateDirectory = (items: DirectoryItem[]): DirectoryItem[] => {
+      return items.map(item => {
+        if (item.id === currentDirectoryItem.id) {
+          return { ...item, selectedKnowledgeItems: selectedIds };
+        }
+        if (item.children.length > 0) {
+          return { ...item, children: updateDirectory(item.children) };
+        }
+        return item;
+      });
+    };
+
+    if (currentDirectoryType === 'commercial') {
+      setCommercialDirectory(updateDirectory(commercialDirectory));
+    } else {
+      setTechnicalDirectory(updateDirectory(technicalDirectory));
+    }
+
+    setIsKnowledgeModalOpen(false);
+  };
+
+  const renderKnowledgeModal = () => {
+    if (!isKnowledgeModalOpen || !currentDirectoryItem) return null;
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+          <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-neutral-900">
+              为"{currentDirectoryItem.title}"选择知识库资料
+            </h3>
+            <button
+              onClick={() => setIsKnowledgeModalOpen(false)}
+              className="text-neutral-500 hover:text-neutral-700 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-6">
+            {knowledgeCategories.length === 0 ? (
+              <div className="text-center py-8 text-neutral-500">
+                请先在步骤2选择企业知识库
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {knowledgeCategories.map(category => {
+                  const categoryItems = getFilteredItems(category);
+                  if (categoryItems.length === 0) return null;
+
+                  return (
+                    <div key={category.id} className="border border-neutral-200 rounded-lg overflow-hidden">
+                      <div className="bg-neutral-50 px-4 py-3 border-b border-neutral-200">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="text-sm font-semibold text-neutral-900">{category.name}</h4>
+                        </div>
+                        <div className="mt-2">
+                          {renderSearchFields(category)}
+                        </div>
+                      </div>
+                      <div className="p-4 space-y-2 max-h-60 overflow-y-auto">
+                        {categoryItems.map(item => (
+                          <label
+                            key={item.id}
+                            className="flex items-start gap-3 p-3 border border-neutral-200 rounded hover:bg-neutral-50 cursor-pointer transition-colors"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={tempSelectedKnowledgeIds.includes(item.id)}
+                              onChange={(e) => {
+                                const newIds = e.target.checked
+                                  ? [...tempSelectedKnowledgeIds, item.id]
+                                  : tempSelectedKnowledgeIds.filter(id => id !== item.id);
+                                setTempSelectedKnowledgeIds(newIds);
+                              }}
+                              className="mt-0.5 w-4 h-4 text-primary-600 rounded focus:ring-primary-500"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-medium text-neutral-900">{item.name}</div>
+                              {(item.certNumber || item.projectName || item.year) && (
+                                <div className="text-xs text-neutral-500 mt-1 space-x-2">
+                                  {item.certNumber && <span>证书号: {item.certNumber}</span>}
+                                  {item.projectName && <span>项目: {item.projectName}</span>}
+                                  {item.year && <span>年份: {item.year}</span>}
+                                </div>
+                              )}
+                            </div>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <div className="px-6 py-4 border-t border-neutral-200 flex justify-between items-center">
+            <div className="text-sm text-neutral-600">
+              已选择 <span className="font-semibold text-primary-600">{tempSelectedKnowledgeIds.length}</span> 项资料
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsKnowledgeModalOpen(false)}
+                className="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={() => handleKnowledgeSelection(tempSelectedKnowledgeIds)}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const handleReferenceSelection = (selectedIds: string[]) => {
+    if (!currentDirectoryItem) return;
+
+    const updateDirectory = (items: DirectoryItem[]): DirectoryItem[] => {
+      return items.map(item => {
+        if (item.id === currentDirectoryItem.id) {
+          return { ...item, selectedReferenceItems: selectedIds };
+        }
+        if (item.children.length > 0) {
+          return { ...item, children: updateDirectory(item.children) };
+        }
+        return item;
+      });
+    };
+
+    if (currentDirectoryType === 'commercial') {
+      setCommercialDirectory(updateDirectory(commercialDirectory));
+    } else {
+      setTechnicalDirectory(updateDirectory(technicalDirectory));
+    }
+
+    setIsReferenceModalOpen(false);
+  };
+
+  const renderReferenceModal = () => {
+    if (!isReferenceModalOpen || !currentDirectoryItem) return null;
+
+    const referenceCategory = knowledgeCategories.find(cat => cat.id === 'templates');
+    const referenceItems = referenceCategory?.items || [];
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+          <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-neutral-900">
+              为"{currentDirectoryItem.title}"选择参考资料
+            </h3>
+            <button
+              onClick={() => setIsReferenceModalOpen(false)}
+              className="text-neutral-500 hover:text-neutral-700 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-6">
+            {referenceItems.length === 0 ? (
+              <div className="text-center py-8 text-neutral-500">
+                暂无历史投标文件
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {referenceItems.map(item => (
+                  <label
+                    key={item.id}
+                    className="flex items-start gap-3 p-3 border border-neutral-200 rounded hover:bg-neutral-50 cursor-pointer transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={tempSelectedReferenceIds.includes(item.id)}
+                      onChange={(e) => {
+                        const newIds = e.target.checked
+                          ? [...tempSelectedReferenceIds, item.id]
+                          : tempSelectedReferenceIds.filter(id => id !== item.id);
+                        setTempSelectedReferenceIds(newIds);
+                      }}
+                      className="mt-0.5 w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-neutral-900">{item.name}</div>
+                      {item.uploadTime && (
+                        <div className="text-xs text-neutral-500 mt-1">
+                          上传时间: {item.uploadTime}
+                        </div>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="px-6 py-4 border-t border-neutral-200 flex justify-between items-center">
+            <div className="text-sm text-neutral-600">
+              已选择 <span className="font-semibold text-blue-600">{tempSelectedReferenceIds.length}</span> 项资料
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setIsReferenceModalOpen(false)}
+                className="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={() => handleReferenceSelection(tempSelectedReferenceIds)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderStepContent = () => {
     switch (currentStep) {
       case 1:
         return renderStep1();
       case 2:
-        return renderStep2();
+        return renderStep2Combined();
       case 3:
-        return renderStep3();
+        return renderStep3Combined();
       case 4:
-        return renderStep4();
+        return renderStep4New();
       case 5:
-        return renderStep6();
-      case 6:
         return renderStep5();
-      case 7:
+      case 6:
         return renderStep7();
       default:
         return null;
@@ -1961,26 +2783,29 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         </div>
       </div>
 
-      {currentStep !== 7 && (
-        <div className="border-t border-neutral-200 px-6 py-4 flex justify-between flex-shrink-0">
+      {currentStep < 6 && (
+        <div className="relative z-10 border-t border-neutral-200 bg-white px-6 py-4 flex justify-between flex-shrink-0 shadow-lg">
           <button
             onClick={handlePrevStep}
             disabled={currentStep === 1}
-            className="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            className="px-6 py-2.5 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
             上一步
           </button>
           <button
-            onClick={isViewMode ? () => setCurrentStep(Math.min(currentStep + 1, 7)) : handleNextStep}
-            disabled={isViewMode ? currentStep >= 7 : !canProceedToNextStep()}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            onClick={isViewMode ? () => setCurrentStep(Math.min(currentStep + 1, 6)) : handleNextStep}
+            disabled={isViewMode ? currentStep >= 6 : !canProceedToNextStep()}
+            className="px-6 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center font-medium"
           >
             下一步
             <ArrowRight className="w-4 h-4 ml-2" />
           </button>
         </div>
       )}
+
+      {renderKnowledgeModal()}
+      {renderReferenceModal()}
     </div>
   );
 };

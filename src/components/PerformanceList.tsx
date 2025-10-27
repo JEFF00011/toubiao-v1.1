@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Upload, FileText, Trash2, Edit, AlertTriangle } from 'lucide-react';
+import { Plus, X, Upload, FileText, Trash2, Edit, AlertTriangle, FileSpreadsheet } from 'lucide-react';
 
 interface Invoice {
   id: string;
@@ -7,6 +7,17 @@ interface Invoice {
   invoiceAmount: string;
   invoiceFile?: { url: string; name: string };
   verificationFile?: { url: string; name: string };
+}
+
+interface Product {
+  id: string;
+  productName: string;
+  productSpec: string;
+  quantity: string;
+  unitPrice: string;
+  totalPrice: string;
+  remarks: string;
+  attachments: { url: string; name: string }[];
 }
 
 interface PerformanceProject {
@@ -17,7 +28,6 @@ interface PerformanceProject {
   contractEffectiveDate: string;
   projectAmount: string;
   contractDescription: string;
-  contractUploadType: 'whole' | 'keyPages';
   partyAContact: string;
   partyAContactInfo: string;
   partyBContact: string;
@@ -30,6 +40,7 @@ interface PerformanceProject {
     acceptanceCertificate: { url: string; name: string }[];
     clientProof: { url: string; name: string }[];
   };
+  products: Product[];
   invoices: Invoice[];
   createdAt?: string;
 }
@@ -63,7 +74,10 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
   const [editingItem, setEditingItem] = useState<PerformanceProject | null>(null);
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
-  const [contractUploadType, setContractUploadType] = useState<'whole' | 'keyPages'>('whole');
+  const [showWholeContract, setShowWholeContract] = useState(true);
+  const [showKeyPages, setShowKeyPages] = useState(true);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   const handleReset = () => {
     setSearchContractNumber('');
@@ -86,7 +100,6 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
       contractEffectiveDate: '',
       projectAmount: '',
       contractDescription: '',
-      contractUploadType: 'whole',
       partyAContact: '',
       partyAContactInfo: '',
       partyBContact: '',
@@ -99,15 +112,14 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
         acceptanceCertificate: [],
         clientProof: []
       },
+      products: [],
       invoices: []
     });
-    setContractUploadType('whole');
     setShowAddModal(true);
   };
 
   const handleEdit = (item: PerformanceProject) => {
     setEditingItem({ ...item });
-    setContractUploadType(item.contractUploadType || 'whole');
     setShowEditModal(true);
   };
 
@@ -183,6 +195,158 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
       setShowInvoiceModal(false);
       setEditingInvoice(null);
     }
+  };
+
+  const handleAddProduct = () => {
+    setEditingProduct({
+      id: String(Date.now()),
+      productName: '',
+      productSpec: '',
+      quantity: '',
+      unitPrice: '',
+      totalPrice: '',
+      remarks: '',
+      attachments: []
+    });
+    setShowProductModal(true);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct({ ...product });
+    setShowProductModal(true);
+  };
+
+  const handleDeleteProduct = (productId: string) => {
+    if (editingItem) {
+      setEditingItem({
+        ...editingItem,
+        products: editingItem.products.filter(prod => prod.id !== productId)
+      });
+    }
+  };
+
+  const confirmProduct = () => {
+    if (editingItem && editingProduct) {
+      const existingIndex = editingItem.products.findIndex(prod => prod.id === editingProduct.id);
+      if (existingIndex >= 0) {
+        const updatedProducts = [...editingItem.products];
+        updatedProducts[existingIndex] = editingProduct;
+        setEditingItem({ ...editingItem, products: updatedProducts });
+      } else {
+        setEditingItem({
+          ...editingItem,
+          products: [...editingItem.products, editingProduct]
+        });
+      }
+      setShowProductModal(false);
+      setEditingProduct(null);
+    }
+  };
+
+  const handleProductFileUpload = (files: FileList | null) => {
+    if (!files || !editingProduct) return;
+
+    const newFiles = Array.from(files).map(file => ({
+      url: URL.createObjectURL(file),
+      name: file.name
+    }));
+
+    setEditingProduct({
+      ...editingProduct,
+      attachments: [...editingProduct.attachments, ...newFiles]
+    });
+  };
+
+  const handleRemoveProductFile = (index: number) => {
+    if (!editingProduct) return;
+
+    const newFiles = editingProduct.attachments.filter((_, i) => i !== index);
+    setEditingProduct({
+      ...editingProduct,
+      attachments: newFiles
+    });
+  };
+
+  const calculateTotalPrice = (quantity: string, unitPrice: string) => {
+    const qty = parseFloat(quantity) || 0;
+    const price = parseFloat(unitPrice) || 0;
+    return (qty * price).toFixed(2);
+  };
+
+  const parseCSV = (text: string): any[] => {
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].split(',').map(h => h.trim());
+    const rows: any[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim());
+      const row: any = {};
+      headers.forEach((header, index) => {
+        row[header] = values[index] || '';
+      });
+      rows.push(row);
+    }
+
+    return rows;
+  };
+
+  const handleBatchUpload = (file: File) => {
+    if (!editingItem) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const text = e.target?.result as string;
+        const jsonData = parseCSV(text);
+
+        if (jsonData.length === 0) {
+          alert('文件为空或格式不正确');
+          return;
+        }
+
+        const newProducts: Product[] = jsonData.map((row, index) => {
+          const quantity = String(row['产品数量'] || row['数量'] || '');
+          const unitPrice = String(row['产品单价'] || row['单价'] || '');
+          return {
+            id: String(Date.now() + index),
+            productName: String(row['产品名称'] || ''),
+            productSpec: String(row['产品规格'] || row['规格'] || ''),
+            quantity,
+            unitPrice,
+            totalPrice: calculateTotalPrice(quantity, unitPrice),
+            remarks: String(row['备注'] || ''),
+            attachments: []
+          };
+        });
+
+        setEditingItem({
+          ...editingItem,
+          products: [...editingItem.products, ...newProducts]
+        });
+
+        alert(`成功导入 ${newProducts.length} 个产品`);
+      } catch (error) {
+        console.error('解析文件失败:', error);
+        alert('文件解析失败，请检查文件格式');
+      }
+    };
+
+    reader.readAsText(file, 'UTF-8');
+  };
+
+  const downloadTemplate = () => {
+    const csvContent = '产品名称,产品规格,产品数量,产品单价,备注\n示例产品,规格说明,10,100.00,备注信息';
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', '产品批量导入模板.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleFileUpload = (category: string, files: FileList | null) => {
@@ -401,6 +565,105 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
             </div>
 
             <div className="border-b border-neutral-200 pb-4">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-sm font-semibold text-neutral-900">产品列表</h4>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={downloadTemplate}
+                    className="flex items-center space-x-1 px-3 py-1.5 text-sm border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 transition-colors"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                    <span>下载模板</span>
+                  </button>
+                  <button
+                    onClick={() => document.getElementById('batch-upload-input')?.click()}
+                    className="flex items-center space-x-1 px-3 py-1.5 text-sm border border-primary-600 text-primary-600 rounded-lg hover:bg-primary-50 transition-colors"
+                  >
+                    <Upload className="w-4 h-4" />
+                    <span>批量导入</span>
+                  </button>
+                  <input
+                    id="batch-upload-input"
+                    type="file"
+                    className="hidden"
+                    accept=".csv"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        handleBatchUpload(file);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                  <button
+                    onClick={handleAddProduct}
+                    className="flex items-center space-x-1 px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>新增产品</span>
+                  </button>
+                </div>
+              </div>
+              {editingItem.products.length > 0 ? (
+                <div className="border border-neutral-200 rounded-lg overflow-hidden">
+                  <table className="w-full">
+                    <thead className="bg-neutral-50">
+                      <tr>
+                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">序号</th>
+                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">产品名称</th>
+                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">产品规格</th>
+                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">数量</th>
+                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">单价</th>
+                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">单项价格</th>
+                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">附件</th>
+                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">操作</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-neutral-200">
+                      {editingItem.products.map((product, index) => (
+                        <tr key={product.id} className="hover:bg-neutral-50">
+                          <td className="px-4 py-2.5 text-sm text-neutral-900">{index + 1}</td>
+                          <td className="px-4 py-2.5 text-sm text-neutral-900">{product.productName}</td>
+                          <td className="px-4 py-2.5 text-sm text-neutral-900">{product.productSpec}</td>
+                          <td className="px-4 py-2.5 text-sm text-neutral-900">{product.quantity}</td>
+                          <td className="px-4 py-2.5 text-sm text-neutral-900">{product.unitPrice}</td>
+                          <td className="px-4 py-2.5 text-sm text-neutral-900">{product.totalPrice}</td>
+                          <td className="px-4 py-2.5 text-sm text-neutral-900">
+                            {product.attachments.length > 0 ? (
+                              <span className="text-green-600">{product.attachments.length} 个文件</span>
+                            ) : (
+                              <span className="text-neutral-400">未上传</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2.5 text-sm">
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => handleEditProduct(product)}
+                                className="text-primary-600 hover:text-primary-800"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteProduct(product.id)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-neutral-500 border border-dashed border-neutral-300 rounded-lg">
+                  暂无产品信息
+                </div>
+              )}
+            </div>
+
+            <div className="border-b border-neutral-200 pb-4">
               <h4 className="text-sm font-semibold text-neutral-900 mb-3">联系人信息</h4>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -455,56 +718,58 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
             </div>
 
             <div className="border-b border-neutral-200 pb-4">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-semibold text-neutral-900">合同附件 <span className="text-xs font-normal text-neutral-500">(可选)</span></h4>
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-sm font-semibold text-neutral-900">合同附件 <span className="text-xs font-normal text-neutral-500">(可选，可同时上传整份合同和关键页)</span></h4>
                 <div className="flex items-center gap-4">
                   <label className="flex items-center cursor-pointer">
                     <input
-                      type="radio"
-                      name="contractUploadType"
-                      value="whole"
-                      checked={contractUploadType === 'whole'}
-                      onChange={(e) => {
-                        setContractUploadType(e.target.value as 'whole' | 'keyPages');
-                        setEditingItem({ ...editingItem, contractUploadType: e.target.value as 'whole' | 'keyPages' });
-                      }}
-                      className="mr-2"
+                      type="checkbox"
+                      checked={showWholeContract}
+                      onChange={(e) => setShowWholeContract(e.target.checked)}
+                      className="mr-2 w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
                     />
                     <span className="text-sm text-neutral-700">整份合同</span>
                   </label>
                   <label className="flex items-center cursor-pointer">
                     <input
-                      type="radio"
-                      name="contractUploadType"
-                      value="keyPages"
-                      checked={contractUploadType === 'keyPages'}
-                      onChange={(e) => {
-                        setContractUploadType(e.target.value as 'whole' | 'keyPages');
-                        setEditingItem({ ...editingItem, contractUploadType: e.target.value as 'whole' | 'keyPages' });
-                      }}
-                      className="mr-2"
+                      type="checkbox"
+                      checked={showKeyPages}
+                      onChange={(e) => setShowKeyPages(e.target.checked)}
+                      className="mr-2 w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
                     />
                     <span className="text-sm text-neutral-700">合同关键页</span>
                   </label>
                 </div>
               </div>
-              {contractUploadType === 'whole' ? (
-                <div>
-                  {renderAttachmentSection('整份合同', 'wholeContract', editingItem.attachments.wholeContract)}
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-4">
+                {showWholeContract && (
                   <div>
-                    {renderAttachmentSection('合同首页', 'contractFirstPage', editingItem.attachments.contractFirstPage)}
+                    <h5 className="text-sm font-medium text-neutral-700 mb-2">整份合同</h5>
+                    {renderAttachmentSection('整份合同', 'wholeContract', editingItem.attachments.wholeContract)}
                   </div>
+                )}
+                {showKeyPages && (
                   <div>
-                    {renderAttachmentSection('主要条款页', 'contractMainTerms', editingItem.attachments.contractMainTerms)}
+                    <h5 className="text-sm font-medium text-neutral-700 mb-2">合同关键页</h5>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        {renderAttachmentSection('合同首页', 'contractFirstPage', editingItem.attachments.contractFirstPage)}
+                      </div>
+                      <div>
+                        {renderAttachmentSection('主要条款页', 'contractMainTerms', editingItem.attachments.contractMainTerms)}
+                      </div>
+                      <div>
+                        {renderAttachmentSection('合同盖章页', 'contractSealPage', editingItem.attachments.contractSealPage)}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    {renderAttachmentSection('合同盖章页', 'contractSealPage', editingItem.attachments.contractSealPage)}
+                )}
+                {!showWholeContract && !showKeyPages && (
+                  <div className="text-center py-8 text-neutral-500 border border-dashed border-neutral-300 rounded-lg">
+                    请至少选择一种合同上传方式
                   </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
 
             <div className="border-b border-neutral-200 pb-4">
@@ -923,6 +1188,181 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
               </button>
               <button
                 onClick={confirmInvoice}
+                className="px-4 py-2 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors"
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showProductModal && editingProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between sticky top-0 bg-white z-10">
+              <h3 className="text-lg font-medium text-neutral-900">
+                {editingProduct.id && editingItem?.products.find(prod => prod.id === editingProduct.id) ? '编辑产品' : '新增产品'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowProductModal(false);
+                  setEditingProduct(null);
+                }}
+                className="text-neutral-400 hover:text-neutral-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    产品名称 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editingProduct.productName}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, productName: e.target.value })}
+                    placeholder="请输入产品名称"
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    产品规格 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={editingProduct.productSpec}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, productSpec: e.target.value })}
+                    placeholder="请输入产品规格"
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    产品数量 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    value={editingProduct.quantity}
+                    onChange={(e) => {
+                      const newQuantity = e.target.value;
+                      const newTotalPrice = calculateTotalPrice(newQuantity, editingProduct.unitPrice);
+                      setEditingProduct({
+                        ...editingProduct,
+                        quantity: newQuantity,
+                        totalPrice: newTotalPrice
+                      });
+                    }}
+                    placeholder="请输入数量"
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    产品单价 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editingProduct.unitPrice}
+                    onChange={(e) => {
+                      const newUnitPrice = e.target.value;
+                      const newTotalPrice = calculateTotalPrice(editingProduct.quantity, newUnitPrice);
+                      setEditingProduct({
+                        ...editingProduct,
+                        unitPrice: newUnitPrice,
+                        totalPrice: newTotalPrice
+                      });
+                    }}
+                    placeholder="请输入单价"
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    单项价格
+                  </label>
+                  <input
+                    type="text"
+                    value={editingProduct.totalPrice}
+                    readOnly
+                    placeholder="自动计算"
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg bg-neutral-50 text-neutral-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-1">
+                    备注
+                  </label>
+                  <input
+                    type="text"
+                    value={editingProduct.remarks}
+                    onChange={(e) => setEditingProduct({ ...editingProduct, remarks: e.target.value })}
+                    placeholder="请输入备注"
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+              </div>
+
+              {editingProduct.id && editingItem?.products.find(prod => prod.id === editingProduct.id) && (
+                <div>
+                  <label className="block text-sm font-medium text-neutral-700 mb-2">
+                    产品附件 <span className="text-neutral-500 text-xs">(可选)</span>
+                  </label>
+                  {editingProduct.attachments.length > 0 && (
+                    <div className="mb-3 space-y-2">
+                      {editingProduct.attachments.map((file, index) => (
+                        <div key={index} className="flex items-center justify-between bg-neutral-50 px-3 py-2 rounded-lg border border-neutral-200">
+                          <div className="flex items-center space-x-2">
+                            <FileText className="w-4 h-4 text-neutral-400" />
+                            <span className="text-sm text-neutral-900">{file.name}</span>
+                          </div>
+                          <button
+                            onClick={() => handleRemoveProductFile(index)}
+                            className="text-red-600 hover:text-red-800 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <div
+                    className="border-2 border-dashed border-neutral-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors cursor-pointer bg-neutral-50"
+                    onClick={() => document.getElementById('product-file')?.click()}
+                  >
+                    <Upload className="w-6 h-6 mx-auto text-neutral-400 mb-1" />
+                    <p className="text-sm text-neutral-600">点击上传产品附件</p>
+                    <p className="text-xs text-neutral-500 mt-1">支持 JPG、PNG、PDF 格式</p>
+                    <input
+                      id="product-file"
+                      type="file"
+                      className="hidden"
+                      accept=".jpg,.jpeg,.png,.pdf"
+                      multiple
+                      onChange={(e) => handleProductFileUpload(e.target.files)}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="px-6 py-4 bg-neutral-50 flex justify-end gap-2 rounded-b-lg sticky bottom-0">
+              <button
+                onClick={() => {
+                  setShowProductModal(false);
+                  setEditingProduct(null);
+                }}
+                className="px-4 py-2 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-100 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmProduct}
                 className="px-4 py-2 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors"
               >
                 确定

@@ -6,6 +6,7 @@ interface GeneratedDocument {
   id: string;
   name: string;
   fileTypes: string[];
+  projectId: string;
   projectName: string;
   companyName: string;
   status: 'draft' | 'generating' | 'completed';
@@ -56,6 +57,7 @@ const GeneratedDocumentManager: React.FC<GeneratedDocumentManagerProps> = ({
         id: '1',
         name: '某市智慧城市建设项目投标文件',
         fileTypes: ['commercial', 'technical'],
+        projectId: '1',
         projectName: '某市智慧城市建设项目',
         companyName: '北京某某科技有限公司',
         status: 'completed',
@@ -65,6 +67,7 @@ const GeneratedDocumentManager: React.FC<GeneratedDocumentManagerProps> = ({
         id: '2',
         name: '教育信息化平台投标文件',
         fileTypes: ['commercial'],
+        projectId: '2',
         projectName: '教育信息化平台采购项目',
         companyName: '上海XX信息技术有限公司',
         status: 'draft',
@@ -74,6 +77,7 @@ const GeneratedDocumentManager: React.FC<GeneratedDocumentManagerProps> = ({
         id: '3',
         name: '医院设备采购项目投标文件',
         fileTypes: ['commercial', 'technical'],
+        projectId: '3',
         projectName: '医院设备采购项目',
         companyName: '深圳某某医疗科技有限公司',
         status: 'generating',

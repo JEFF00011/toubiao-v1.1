@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building2, Award, DollarSign, Users, FileText, Upload, Eye, ArrowLeft, Package, Settings } from 'lucide-react';
+import { Building2, Award, DollarSign, Users, FileText, Upload, Eye, ArrowLeft, Package, FolderOpen } from 'lucide-react';
 import CompanyBasicInfo from './CompanyBasicInfo';
 import CompanyDocumentList from './CompanyDocumentList';
 import QualificationList from './QualificationList';
@@ -8,7 +8,7 @@ import PerformanceList from './PerformanceList';
 import PersonnelList from './PersonnelList';
 import ProductInfo from './ProductInfo';
 import HistoricalDocuments from './HistoricalDocuments';
-import DocumentFormatManager from './DocumentFormatManager';
+import OtherReferenceFiles from './OtherReferenceFiles';
 
 interface Company {
   id: string;
@@ -62,7 +62,7 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
     { id: 'personnel', label: '人员信息', icon: Users, count: 28 },
     { id: 'product', label: '产品信息', icon: Package, count: 0 },
     { id: 'templates', label: '历史投标文件', icon: Upload, count: 22 },
-    { id: 'documentFormat', label: '投标文件格式管理', icon: Settings, count: 0 }
+    { id: 'referenceFiles', label: '其他参考文件', icon: FolderOpen, count: 0 }
   ]);
 
 
@@ -323,14 +323,8 @@ const DatabaseManager: React.FC<DatabaseManagerProps> = ({
         return <ProductInfo companyId={selectedCompany.id} readOnly={readOnly} />;
       case 'templates':
         return <HistoricalDocuments companyId={selectedCompany.id} readOnly={readOnly} />;
-      case 'documentFormat':
-        return (
-          <DocumentFormatManager
-            onSelectFormat={(format) => {
-              console.log('Selected format:', format);
-            }}
-          />
-        );
+      case 'referenceFiles':
+        return <OtherReferenceFiles companyId={selectedCompany.id} readOnly={readOnly} />;
       default:
         return <CompanyBasicInfo companyId={selectedCompany.id} readOnly={readOnly} />;
     }

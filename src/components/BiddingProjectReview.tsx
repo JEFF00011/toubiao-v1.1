@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { ArrowLeft, CreditCard as Edit2, Save, X, FileText, AlertTriangle, CheckCircle, FolderTree, Plus, Trash2 } from 'lucide-react';
+import { RichTextEditor } from './RichTextEditor';
 
 interface DocumentDirectoryItem {
   title: string;
   description: string;
+  contentFormat?: string;
   children?: DocumentDirectoryItem[];
 }
 
@@ -81,6 +83,72 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
   onSave,
   onConfirm
 }) => {
+  const getFormatTemplate = (title: string): string => {
+    const normalizedTitle = title.toLowerCase().replace(/\s+/g, '');
+
+    if (normalizedTitle.includes('投标函') || normalizedTitle.includes('投标涵')) {
+      return `<p><strong>投标函</strong></p>
+<p><br></p>
+<p>致：[招标人名称]</p>
+<p><br></p>
+<p>我方确认收到贵方<strong>[项目名称]</strong>（项目编号：<strong>[项目编号]</strong>）的招标文件，经认真研究，我方愿意按招标文件的要求参加投标，提交投标文件，并承诺如下：</p>
+<p><br></p>
+<p><strong>一、我方完全接受招标文件的各项条款和要求。</strong></p>
+<p><br></p>
+<p><strong>二、我方承诺按照招标文件要求完成本项目，质量符合国家现行相关标准及招标文件要求。</strong></p>
+<p><br></p>
+<p><strong>三、投标有效期：</strong>自开标之日起[XX]天内有效。</p>
+<p><br></p>
+<p><strong>四、如果我方中标：</strong></p>
+<ol>
+<li>我方将在收到中标通知书后，在中标通知书规定的时间内与贵方签订合同。</li>
+<li>我方将按照招标文件和合同约定履行全部义务。</li>
+<li>我方将按招标文件要求提交履约保证金。</li>
+</ol>
+<p><br></p>
+<p><strong>五、我方理解贵方不一定接受最低报价的投标或收到的任何投标。</strong></p>
+<p><br></p>
+<p>投标人：[投标人名称]（盖章）</p>
+<p>法定代表人或授权代表：_________（签字或盖章）</p>
+<p>日期：____年____月____日</p>`;
+    }
+
+    if (normalizedTitle.includes('授权委托书') || normalizedTitle.includes('委托书')) {
+      return `<p><strong>法定代表人授权委托书</strong></p>
+<p><br></p>
+<p>本授权委托书声明：注册于<strong>[注册地址]</strong>的<strong>[投标人全称]</strong>（以下简称"我公司"）的法定代表人<strong>[法定代表人姓名]</strong>代表我公司授权<strong>[被授权人姓名]</strong>为我公司的合法代理人，就<strong>[项目名称]</strong>（项目编号：<strong>[项目编号]</strong>）投标及合同执行事宜，以我公司名义处理一切与之有关的事务。</p>
+<p><br></p>
+<p><strong>授权范围：</strong></p>
+<ol>
+<li>参加该项目的投标活动；</li>
+<li>签署、提交投标文件、签订合同及处理有关事宜；</li>
+<li>参加开标、谈判、签约等活动；</li>
+<li>处理与本项目投标有关的一切事务。</li>
+</ol>
+<p><br></p>
+<p>被授权人在授权范围内签署的一切文件和处理的一切事务，我公司均予以认可。</p>
+<p><br></p>
+<p>本授权书自签署之日起生效，有效期至本项目履行完毕止。</p>
+<p><br></p>
+<p><strong>附：</strong></p>
+<ul>
+<li>法定代表人身份证复印件</li>
+<li>被授权人身份证复印件</li>
+</ul>
+<p><br></p>
+<p>投标人：[投标人全称]（盖章）</p>
+<p>法定代表人：_________（签字或盖章）</p>
+<p>被授权人：_________（签字）</p>
+<p><br></p>
+<p>法定代表人身份证号：__________________</p>
+<p>被授权人身份证号：__________________</p>
+<p><br></p>
+<p>日期：____年____月____日</p>`;
+    }
+
+    return '';
+  };
+
   const normalizeData = (data: any): ParsedData => {
     const normalizedBasicInfo = {
       projectInfo: {
@@ -126,7 +194,7 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
         ...data,
         basicInfo: normalizedBasicInfo,
         documentDirectory: {
-          summary: '请手动录入投标文件目录。',
+          summary: `请手动录入${projectStatus === 'parsed' ? '投标文件格式' : '投标文件目录'}。`,
           files: [
             {
               name: '商务文件',
@@ -138,9 +206,34 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
     }
 
     if (data.documentDirectory.files) {
+      const processItem = (item: any): any => {
+        const template = getFormatTemplate(item.title);
+        const newFormat = (item.contentFormat && item.contentFormat.trim()) || template;
+
+        const processedItem: any = {
+          ...item,
+          contentFormat: newFormat
+        };
+
+        if (item.children && item.children.length > 0) {
+          processedItem.children = item.children.map(processItem);
+        }
+
+        return processedItem;
+      };
+
+      const processedFiles = data.documentDirectory.files.map((file: any) => ({
+        ...file,
+        items: file.items.map(processItem)
+      }));
+
       return {
         ...data,
-        basicInfo: normalizedBasicInfo
+        basicInfo: normalizedBasicInfo,
+        documentDirectory: {
+          ...data.documentDirectory,
+          files: processedFiles
+        }
       };
     }
 
@@ -152,20 +245,28 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
     if (oldCommercial.trim()) {
       files.push({
         name: '商务文件',
-        items: oldCommercial.split('\n').filter((line: string) => line.trim()).map((line: string) => ({
-          title: line.trim(),
-          description: ''
-        }))
+        items: oldCommercial.split('\n').filter((line: string) => line.trim()).map((line: string) => {
+          const title = line.trim();
+          return {
+            title,
+            description: '',
+            contentFormat: getFormatTemplate(title)
+          };
+        })
       });
     }
 
     if (oldTechnical.trim()) {
       files.push({
         name: '技术文件',
-        items: oldTechnical.split('\n').filter((line: string) => line.trim()).map((line: string) => ({
-          title: line.trim(),
-          description: ''
-        }))
+        items: oldTechnical.split('\n').filter((line: string) => line.trim()).map((line: string) => {
+          const title = line.trim();
+          return {
+            title,
+            description: '',
+            contentFormat: getFormatTemplate(title)
+          };
+        })
       });
     }
 
@@ -195,6 +296,20 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmedPages, setConfirmedPages] = useState<Set<string>>(new Set());
 
+  const [extraFields, setExtraFields] = useState<{
+    projectInfo: Array<{id: string; label: string; value: string}>;
+    tenderer: Array<{id: string; label: string; value: string}>;
+    agent: Array<{id: string; label: string; value: string}>;
+    keyTimeline: Array<{id: string; label: string; value: string}>;
+    bidBond: Array<{id: string; label: string; value: string}>;
+  }>({
+    projectInfo: [],
+    tenderer: [],
+    agent: [],
+    keyTimeline: [],
+    bidBond: []
+  });
+
   console.log('BiddingProjectReview - initialData:', initialData);
   console.log('BiddingProjectReview - normalizedInitialData:', normalizedInitialData);
   console.log('BiddingProjectReview - data.basicInfo.projectInfo:', data.basicInfo.projectInfo);
@@ -205,7 +320,7 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
     { id: 'evaluationCriteria', label: '评审要求', icon: CheckCircle },
     { id: 'documentRequirements', label: '投标文件要求', icon: FileText },
     { id: 'risks', label: '风险项/废标项', icon: AlertTriangle },
-    { id: 'documentDirectory', label: '投标文件目录', icon: FolderTree }
+    { id: 'documentDirectory', label: projectStatus === 'parsed' ? '投标文件格式' : '投标文件目录', icon: FolderTree }
   ];
 
   const handleEdit = (section: string) => {
@@ -218,6 +333,45 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
 
   const handleSaveSection = () => {
     setEditingSection(null);
+    setHasChanges(true);
+  };
+
+  const addExtraField = (section: 'projectInfo' | 'tenderer' | 'agent' | 'keyTimeline' | 'bidBond') => {
+    const newField = {
+      id: `field_${Date.now()}`,
+      label: '新增字段',
+      value: ''
+    };
+    setExtraFields({
+      ...extraFields,
+      [section]: [...extraFields[section], newField]
+    });
+    setHasChanges(true);
+  };
+
+  const updateExtraField = (
+    section: 'projectInfo' | 'tenderer' | 'agent' | 'keyTimeline' | 'bidBond',
+    id: string,
+    field: 'label' | 'value',
+    newValue: string
+  ) => {
+    setExtraFields({
+      ...extraFields,
+      [section]: extraFields[section].map(f =>
+        f.id === id ? { ...f, [field]: newValue } : f
+      )
+    });
+    setHasChanges(true);
+  };
+
+  const deleteExtraField = (
+    section: 'projectInfo' | 'tenderer' | 'agent' | 'keyTimeline' | 'bidBond',
+    id: string
+  ) => {
+    setExtraFields({
+      ...extraFields,
+      [section]: extraFields[section].filter(f => f.id !== id)
+    });
     setHasChanges(true);
   };
 
@@ -251,6 +405,50 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
     setShowConfirmModal(false);
   };
 
+  const renderExtraField = (
+    section: 'projectInfo' | 'tenderer' | 'agent' | 'keyTimeline' | 'bidBond',
+    field: {id: string; label: string; value: string}
+  ) => {
+    const isEditing = editingSection === section;
+
+    return (
+      <div key={field.id} className="px-4 py-3 flex items-start gap-2">
+        {isEditing ? (
+          <>
+            <input
+              type="text"
+              value={field.label}
+              onChange={(e) => updateExtraField(section, field.id, 'label', e.target.value)}
+              placeholder="字段名称"
+              className="w-32 flex-shrink-0 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+            <input
+              type="text"
+              value={field.value}
+              onChange={(e) => updateExtraField(section, field.id, 'value', e.target.value)}
+              placeholder="字段值"
+              className="flex-1 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+            <button
+              onClick={() => deleteExtraField(section, field.id)}
+              className="flex-shrink-0 p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors"
+              title="删除"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </>
+        ) : (
+          <>
+            <label className="w-32 text-sm font-medium text-neutral-600 flex-shrink-0">{field.label}</label>
+            <div className="flex-1 text-sm text-neutral-900 whitespace-pre-wrap">
+              {field.value || <span className="text-neutral-400 italic">未填写</span>}
+            </div>
+          </>
+        )}
+      </div>
+    );
+  };
+
   const renderField = (
     label: string,
     value: string,
@@ -258,7 +456,8 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
     section: string,
     type: 'input' | 'textarea' = 'input',
     canDelete: boolean = false,
-    onDelete?: () => void
+    onDelete?: () => void,
+    hideLabel: boolean = false
   ) => {
     const isEditing = editingSection === section;
     const calculateRows = (text: string) => {
@@ -269,7 +468,7 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
 
     return (
       <div className="px-4 py-3 flex items-start gap-2">
-        <label className="w-32 text-sm font-medium text-neutral-600 flex-shrink-0">{label}</label>
+        {!hideLabel && <label className="w-32 text-sm font-medium text-neutral-600 flex-shrink-0">{label}</label>}
         {isEditing ? (
           <>
             {type === 'textarea' ? (
@@ -277,14 +476,14 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 rows={calculateRows(value)}
-                className="flex-1 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono"
+                className={`${hideLabel ? 'w-full' : 'flex-1'} px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono`}
               />
             ) : (
               <input
                 type="text"
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
-                className="flex-1 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                className={`${hideLabel ? 'w-full' : 'flex-1'} px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500`}
               />
             )}
             {canDelete && onDelete && (
@@ -298,7 +497,7 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
             )}
           </>
         ) : (
-          <div className="flex-1 text-sm text-neutral-900 whitespace-pre-wrap">{value}</div>
+          <div className={`${hideLabel ? 'w-full' : 'flex-1'} text-sm text-neutral-900 whitespace-pre-wrap`}>{value}</div>
         )}
       </div>
     );
@@ -471,7 +670,7 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
               {isEmpty && isDirectory && (
                 <div className="mb-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-sm text-blue-800">
-                    <strong>提示：</strong>招标文件中未解析到投标文件目录，请手动输入。建议格式：
+                    <strong>提示：</strong>招标文件中未解析到{projectStatus === 'parsed' ? '投标文件格式' : '投标文件目录'}，请手动输入。建议格式：
                   </p>
                   <div className="mt-2 text-xs text-blue-700 font-mono bg-white rounded p-2">
                     一、资格证明文件<br/>
@@ -526,7 +725,7 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
                   value={content}
                   onChange={(e) => onChange(e.target.value)}
                   rows={10}
-                  placeholder={isDirectory ? "请输入投标文件目录...\n\n建议使用层级格式：\n一、主要章节\n  1.1 子章节\n  1.2 子章节\n二、主要章节\n  2.1 子章节" : ""}
+                  placeholder={isDirectory ? `请输入${projectStatus === 'parsed' ? '投标文件格式' : '投标文件目录'}...\n\n建议使用层级格式：\n一、主要章节\n  1.1 子章节\n  1.2 子章节\n二、主要章节\n  2.1 子章节` : ""}
                   className="w-full px-3 py-2 text-sm border border-neutral-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500 font-mono"
                 />
               )}
@@ -537,7 +736,7 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
               <div>
                 <p className="text-sm font-medium text-yellow-900 mb-1">未解析到内容</p>
                 <p className="text-sm text-yellow-700">
-                  招标文件中未找到{isDirectory ? '投标文件目录' : '相关内容'}，请点击"编辑"按钮手动输入。
+                  招标文件中未找到{isDirectory ? (projectStatus === 'parsed' ? '投标文件格式' : '投标文件目录') : '相关内容'}，请点击"编辑"按钮手动输入。
                 </p>
               </div>
             </div>
@@ -586,8 +785,9 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
           {renderField('招标控制价', data.basicInfo.projectInfo.budgetAmount, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, projectInfo: { ...data.basicInfo.projectInfo, budgetAmount: val } } }), 'projectInfo')}
           {renderField('是否接受联合体投标', data.basicInfo.projectInfo.allowConsortium, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, projectInfo: { ...data.basicInfo.projectInfo, allowConsortium: val } } }), 'projectInfo')}
           {renderField('项目概况', data.basicInfo.projectInfo.projectOverview, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, projectInfo: { ...data.basicInfo.projectInfo, projectOverview: val } } }), 'projectInfo', 'textarea')}
+          {extraFields.projectInfo.map(field => renderExtraField('projectInfo', field))}
         </>
-      ))}
+      ), true, () => addExtraField('projectInfo'))}
 
       {renderSection('2. 招标人信息', 'tenderer', (
         <>
@@ -596,8 +796,9 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
           {renderField('邮件', data.basicInfo.tenderer.email, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, tenderer: { ...data.basicInfo.tenderer, email: val } } }), 'tenderer')}
           {renderField('地址', data.basicInfo.tenderer.address, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, tenderer: { ...data.basicInfo.tenderer, address: val } } }), 'tenderer')}
           {renderField('邮编', data.basicInfo.tenderer.zipCode, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, tenderer: { ...data.basicInfo.tenderer, zipCode: val } } }), 'tenderer')}
+          {extraFields.tenderer.map(field => renderExtraField('tenderer', field))}
         </>
-      ))}
+      ), true, () => addExtraField('tenderer'))}
 
       {renderSection('3. 代理机构信息', 'agent', (
         <>
@@ -606,8 +807,9 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
           {renderField('邮件', data.basicInfo.agent.email, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, agent: { ...data.basicInfo.agent, email: val } } }), 'agent')}
           {renderField('地址', data.basicInfo.agent.address, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, agent: { ...data.basicInfo.agent, address: val } } }), 'agent')}
           {renderField('邮编', data.basicInfo.agent.zipCode, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, agent: { ...data.basicInfo.agent, zipCode: val } } }), 'agent')}
+          {extraFields.agent.map(field => renderExtraField('agent', field))}
         </>
-      ))}
+      ), true, () => addExtraField('agent'))}
 
       {renderSection('4. 关键时间点及内容', 'keyTimeline', (
         <>
@@ -615,16 +817,18 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
           {renderField('投标文件递交方式', data.basicInfo.keyTimeline.submissionMethod, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, keyTimeline: { ...data.basicInfo.keyTimeline, submissionMethod: val } } }), 'keyTimeline')}
           {renderField('开标时间', data.basicInfo.keyTimeline.openingTime, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, keyTimeline: { ...data.basicInfo.keyTimeline, openingTime: val } } }), 'keyTimeline')}
           {renderField('开标地点', data.basicInfo.keyTimeline.openingLocation, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, keyTimeline: { ...data.basicInfo.keyTimeline, openingLocation: val } } }), 'keyTimeline')}
+          {extraFields.keyTimeline.map(field => renderExtraField('keyTimeline', field))}
         </>
-      ))}
+      ), true, () => addExtraField('keyTimeline'))}
 
       {renderSection('5. 投标保证金', 'bidBond', (
         <>
           {renderField('递交方式', data.basicInfo.bidBond.submissionMethod, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, bidBond: { ...data.basicInfo.bidBond, submissionMethod: val } } }), 'bidBond')}
           {renderField('金额', data.basicInfo.bidBond.amount, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, bidBond: { ...data.basicInfo.bidBond, amount: val } } }), 'bidBond')}
           {renderField('退还规定', data.basicInfo.bidBond.refundPolicy, (val) => setData({ ...data, basicInfo: { ...data.basicInfo, bidBond: { ...data.basicInfo.bidBond, refundPolicy: val } } }), 'bidBond', 'textarea')}
+          {extraFields.bidBond.map(field => renderExtraField('bidBond', field))}
         </>
-      ))}
+      ), true, () => addExtraField('bidBond'))}
     </div>
   );
 
@@ -673,13 +877,14 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
               ) : (
                 requirements.map((req, index) =>
                   renderField(
-                    `要求 ${index + 1}`,
+                    '',
                     req,
                     (val) => updateRequirement(index, val),
                     'qualificationRequirements',
                     'textarea',
                     true,
-                    () => deleteRequirement(index)
+                    () => deleteRequirement(index),
+                    true
                   )
                 )
               )}
@@ -771,13 +976,14 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
               ) : (
                 commercialItems.map((item, index) =>
                   renderField(
-                    `评分项 ${index + 1}`,
+                    '',
                     item,
                     (val) => updateCommercialItem(index, val),
                     'evaluationCommercial',
                     'textarea',
                     true,
-                    () => deleteCommercialItem(index)
+                    () => deleteCommercialItem(index),
+                    true
                   )
                 )
               )}
@@ -798,13 +1004,14 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
               ) : (
                 technicalItems.map((item, index) =>
                   renderField(
-                    `评分项 ${index + 1}`,
+                    '',
                     item,
                     (val) => updateTechnicalItem(index, val),
                     'evaluationTechnical',
                     'textarea',
                     true,
-                    () => deleteTechnicalItem(index)
+                    () => deleteTechnicalItem(index),
+                    true
                   )
                 )
               )}
@@ -862,13 +1069,14 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
               ) : (
                 requirements.map((req, index) =>
                   renderField(
-                    `要求 ${index + 1}`,
+                    '',
                     req,
                     (val) => updateRequirement(index, val),
                     'documentRequirements',
                     'textarea',
                     true,
-                    () => deleteRequirement(index)
+                    () => deleteRequirement(index),
+                    true
                   )
                 )
               )}
@@ -883,22 +1091,56 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
 
   const renderRisks = () => {
     const allLines = data.risks.split('\n');
-    const risks = allLines.length === 1 && allLines[0].trim() === '' ? [] : allLines;
+    const allItems = allLines.filter(line => line.trim() !== '');
 
-    const updateRisk = (index: number, value: string) => {
-      const newRisks = [...risks];
+    const riskItems: string[] = [];
+    const invalidItems: string[] = [];
+
+    allItems.forEach(item => {
+      const trimmed = item.trim();
+      if (trimmed.includes('废标') || trimmed.includes('无效标')) {
+        invalidItems.push(trimmed);
+      } else {
+        riskItems.push(trimmed);
+      }
+    });
+
+    const updateRiskItem = (index: number, value: string) => {
+      const newRisks = [...riskItems];
       newRisks[index] = value;
-      setData({ ...data, risks: newRisks.join('\n') });
+      const combined = [...newRisks, ...invalidItems];
+      setData({ ...data, risks: combined.join('\n') });
     };
 
-    const deleteRisk = (index: number) => {
-      const newRisks = risks.filter((_, i) => i !== index);
-      setData({ ...data, risks: newRisks.length > 0 ? newRisks.join('\n') : '' });
+    const deleteRiskItem = (index: number) => {
+      const newRisks = riskItems.filter((_, i) => i !== index);
+      const combined = [...newRisks, ...invalidItems];
+      setData({ ...data, risks: combined.length > 0 ? combined.join('\n') : '' });
     };
 
-    const addRisk = () => {
-      const newRisks = [...risks, '新增风险项/废标项'];
-      setData({ ...data, risks: newRisks.join('\n') });
+    const addRiskItem = () => {
+      const newRisks = [...riskItems, '新增风险项'];
+      const combined = [...newRisks, ...invalidItems];
+      setData({ ...data, risks: combined.join('\n') });
+    };
+
+    const updateInvalidItem = (index: number, value: string) => {
+      const newInvalids = [...invalidItems];
+      newInvalids[index] = value;
+      const combined = [...riskItems, ...newInvalids];
+      setData({ ...data, risks: combined.join('\n') });
+    };
+
+    const deleteInvalidItem = (index: number) => {
+      const newInvalids = invalidItems.filter((_, i) => i !== index);
+      const combined = [...riskItems, ...newInvalids];
+      setData({ ...data, risks: combined.length > 0 ? combined.join('\n') : '' });
+    };
+
+    const addInvalidItem = () => {
+      const newInvalids = [...invalidItems, '新增废标项'];
+      const combined = [...riskItems, ...newInvalids];
+      setData({ ...data, risks: combined.join('\n') });
     };
 
     return (
@@ -912,31 +1154,60 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
           </div>
         )}
         {renderSection(
-          '风险项/废标项',
-          'risks',
+          '风险项',
+          'riskItems',
           (
             <>
-              {risks.length === 0 ? (
+              {riskItems.length === 0 ? (
                 <div className="px-4 py-8 text-center text-neutral-500">
-                  暂无风险项/废标项，点击"新增字段"添加
+                  暂无风险项，点击"新增字段"添加
                 </div>
               ) : (
-                risks.map((risk, index) =>
+                riskItems.map((risk, index) =>
                   renderField(
-                    `风险项 ${index + 1}`,
+                    '',
                     risk,
-                    (val) => updateRisk(index, val),
-                    'risks',
+                    (val) => updateRiskItem(index, val),
+                    'riskItems',
                     'textarea',
                     true,
-                    () => deleteRisk(index)
+                    () => deleteRiskItem(index),
+                    true
                   )
                 )
               )}
             </>
           ),
           true,
-          addRisk
+          addRiskItem
+        )}
+        {renderSection(
+          '废标项',
+          'invalidItems',
+          (
+            <>
+              {invalidItems.length === 0 ? (
+                <div className="px-4 py-8 text-center text-neutral-500">
+                  暂无废标项，点击"新增字段"添加
+                </div>
+              ) : (
+                invalidItems.map((item, index) =>
+                  renderField(
+                    '',
+                    item,
+                    (val) => updateInvalidItem(index, val),
+                    'invalidItems',
+                    'textarea',
+                    true,
+                    () => deleteInvalidItem(index),
+                    true
+                  )
+                )
+              )}
+            </>
+          ),
+          true,
+          addInvalidItem
         )}
       </div>
     );
@@ -946,7 +1217,7 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
     const isEditing = editingSection === 'documentDirectory';
     const indent = level * 24;
 
-    const updateItem = (field: 'title' | 'description', value: string) => {
+    const updateItem = (field: 'title' | 'description' | 'contentFormat', value: string) => {
       const newFiles = [...data.documentDirectory.files];
       let current: any = newFiles[fileIndex].items;
 
@@ -961,6 +1232,7 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
         documentDirectory: { ...data.documentDirectory, files: newFiles }
       });
     };
+
 
     const addChild = () => {
       const newFiles = [...data.documentDirectory.files];
@@ -1039,12 +1311,48 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
                 className="w-full px-2 py-1 text-xs text-neutral-600 border border-neutral-300 rounded focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 placeholder="说明"
               />
+
+              {projectStatus === 'parsed' && (
+                <div className="space-y-2">
+                  <label className="text-xs font-medium text-neutral-700">内容格式：</label>
+                  <RichTextEditor
+                    value={item.contentFormat || ''}
+                    onChange={(value) => updateItem('contentFormat', value)}
+                    placeholder="输入内容格式要求（支持富文本格式）..."
+                  />
+                </div>
+              )}
             </div>
           ) : (
             <div>
               <div className="font-medium text-sm text-neutral-900">{item.title}</div>
               {item.description && (
                 <div className="text-xs text-neutral-600 mt-0.5">说明：{item.description}</div>
+              )}
+              {projectStatus === 'parsed' && (
+                <div className="mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="text-xs font-medium text-blue-900">内容格式：</div>
+                    {item.contentFormat && item.contentFormat.replace(/<[^>]*>/g, '').trim() && (
+                      <span className="text-xs text-blue-600 bg-blue-100 px-2 py-0.5 rounded">
+                        已设置格式要求
+                      </span>
+                    )}
+                  </div>
+                  {item.contentFormat && item.contentFormat.replace(/<[^>]*>/g, '').trim() ? (
+                    <div
+                      className="text-xs text-neutral-800 prose prose-sm max-w-none bg-white p-3 rounded border border-blue-100"
+                      style={{
+                        lineHeight: '1.6',
+                      }}
+                      dangerouslySetInnerHTML={{ __html: item.contentFormat }}
+                    />
+                  ) : (
+                    <div className="text-xs text-blue-600 italic bg-blue-100 p-2 rounded text-center">
+                      暂无格式要求
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           )}
@@ -1067,7 +1375,7 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
       return (
         <div className="p-6">
           <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-sm text-red-700">投标文件目录数据格式错误，请重新解析或手动录入。</p>
+            <p className="text-sm text-red-700">{projectStatus === 'parsed' ? '投标文件格式' : '投标文件目录'}数据格式错误，请重新解析或手动录入。</p>
           </div>
         </div>
       );
@@ -1116,14 +1424,14 @@ const BiddingProjectReview: React.FC<BiddingProjectReviewProps> = ({
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <h4 className="text-sm font-medium text-blue-900 mb-1">核对提示</h4>
             <p className="text-sm text-blue-700">
-              请仔细核对以下解析内容，如有错误或遗漏，请点击"编辑"按钮进行修改。如果招标文件中没有提供投标文件目录，请手动录入。
+              请仔细核对以下解析内容，如有错误或遗漏，请点击"编辑"按钮进行修改。如果招标文件中没有提供{projectStatus === 'parsed' ? '投标文件格式' : '投标文件目录'}，请手动录入。
             </p>
           </div>
         )}
 
         <div className="border border-neutral-200 rounded-lg overflow-hidden">
           <div className="bg-neutral-50 px-4 py-3 border-b border-neutral-200 flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-neutral-900">投标文件目录</h4>
+            <h4 className="text-sm font-semibold text-neutral-900">{projectStatus === 'parsed' ? '投标文件格式' : '投标文件目录'}</h4>
             {!projectStatus || projectStatus !== 'completed' ? (
               !isEditing ? (
                 <button

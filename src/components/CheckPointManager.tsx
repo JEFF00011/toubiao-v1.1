@@ -6,6 +6,7 @@ interface CheckPoint {
   name: string;
   description: string;
   isPublic: boolean;
+  isDefault?: boolean;
 }
 
 interface CheckPointManagerProps {
@@ -13,7 +14,7 @@ interface CheckPointManagerProps {
 }
 
 const MOCK_PUBLIC_CHECKPOINTS: CheckPoint[] = [
-  { id: '1', name: '盖章项检查', description: '检查投标文件中涉及盖章的部分是否全部盖章', isPublic: true },
+  { id: 'default-stamp', name: '盖章项检查', description: '检查投标文件中涉及盖章的部分是否全部盖章', isPublic: true, isDefault: true },
 ];
 
 const CheckPointManager: React.FC<CheckPointManagerProps> = ({ onClose }) => {
@@ -40,6 +41,9 @@ const CheckPointManager: React.FC<CheckPointManagerProps> = ({ onClose }) => {
   };
 
   const handleEdit = (checkPoint: CheckPoint) => {
+    if (checkPoint.isDefault) {
+      return;
+    }
     setSelectedCheckPoint(checkPoint);
     setFormData({
       name: checkPoint.name,
@@ -49,6 +53,9 @@ const CheckPointManager: React.FC<CheckPointManagerProps> = ({ onClose }) => {
   };
 
   const handleDelete = (checkPoint: CheckPoint) => {
+    if (checkPoint.isDefault) {
+      return;
+    }
     setSelectedCheckPoint(checkPoint);
     setShowDeleteModal(true);
   };
@@ -133,20 +140,28 @@ const CheckPointManager: React.FC<CheckPointManagerProps> = ({ onClose }) => {
                     <p className="text-sm text-neutral-600">{checkPoint.description}</p>
                   </div>
                   <div className="flex items-center space-x-2 ml-4">
-                    <button
-                      onClick={() => handleEdit(checkPoint)}
-                      className="px-2 py-1 text-xs text-primary-600 hover:text-primary-800 hover:bg-primary-50 rounded transition-colors flex items-center gap-1"
-                    >
-                      <Edit className="w-3.5 h-3.5" />
-                      编辑
-                    </button>
-                    <button
-                      onClick={() => handleDelete(checkPoint)}
-                      className="px-2 py-1 text-xs text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors flex items-center gap-1"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      删除
-                    </button>
+                    {checkPoint.isDefault ? (
+                      <span className="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded-full font-medium">
+                        默认检查项
+                      </span>
+                    ) : (
+                      <>
+                        <button
+                          onClick={() => handleEdit(checkPoint)}
+                          className="px-2 py-1 text-xs text-primary-600 hover:text-primary-800 hover:bg-primary-50 rounded transition-colors flex items-center gap-1"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                          编辑
+                        </button>
+                        <button
+                          onClick={() => handleDelete(checkPoint)}
+                          className="px-2 py-1 text-xs text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors flex items-center gap-1"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          删除
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

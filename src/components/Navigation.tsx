@@ -14,6 +14,9 @@ const Navigation: React.FC<NavigationProps> = ({ username = '管理员', role = 
   const [showNotificationDetail, setShowNotificationDetail] = useState(false);
   const [showAllNotifications, setShowAllNotifications] = useState(false);
   const [selectedNotification, setSelectedNotification] = useState<any>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [jumpPage, setJumpPage] = useState('');
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -63,6 +66,24 @@ const Navigation: React.FC<NavigationProps> = ({ username = '管理员', role = 
     setSelectedNotification(notif);
     setShowNotifications(false);
     setShowNotificationDetail(true);
+  };
+
+  const totalPages = Math.ceil(notifications.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentNotifications = notifications.slice(startIndex, endIndex);
+
+  const handlePageSizeChange = (newSize: number) => {
+    setItemsPerPage(newSize);
+    setCurrentPage(1);
+  };
+
+  const handleJumpToPage = () => {
+    const pageNum = parseInt(jumpPage);
+    if (pageNum >= 1 && pageNum <= totalPages) {
+      setCurrentPage(pageNum);
+      setJumpPage('');
+    }
   };
 
   const getNotificationIcon = (type: string) => {
@@ -234,19 +255,9 @@ const Navigation: React.FC<NavigationProps> = ({ username = '管理员', role = 
                   setShowNotificationDetail(false);
                   setSelectedNotification(null);
                 }}
-                className="px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-200 rounded-lg transition-colors"
-              >
-                关闭
-              </button>
-              <button
-                onClick={() => {
-                  alert('标记为已读');
-                  setShowNotificationDetail(false);
-                  setSelectedNotification(null);
-                }}
                 className="px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
               >
-                标记为已读
+                关闭
               </button>
             </div>
           </div>
@@ -256,54 +267,174 @@ const Navigation: React.FC<NavigationProps> = ({ username = '管理员', role = 
       {/* All Notifications Modal */}
       {showAllNotifications && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] flex flex-col">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] flex flex-col">
             <div className="flex items-center justify-between px-6 py-4 border-b border-neutral-200">
               <h3 className="text-lg font-semibold text-neutral-900">全部通知</h3>
               <button
-                onClick={() => setShowAllNotifications(false)}
+                onClick={() => {
+                  setShowAllNotifications(false);
+                  setCurrentPage(1);
+                }}
                 className="text-neutral-400 hover:text-neutral-600 transition-colors"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="space-y-3">
-                {notifications.map(notif => (
-                  <div
-                    key={notif.id}
-                    onClick={() => {
-                      setShowAllNotifications(false);
-                      handleNotificationClick(notif);
-                    }}
-                    className="p-4 border border-neutral-200 rounded-lg hover:border-primary-300 hover:bg-primary-50 transition-all duration-150 cursor-pointer"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`flex-shrink-0 w-3 h-3 rounded-full mt-1 ${getNotificationIcon(notif.type)}`}></div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="font-medium text-neutral-900">{notif.title}</p>
-                          <span className="text-xs text-neutral-400 ml-4">{notif.time}</span>
-                        </div>
-                        <p className="text-sm text-neutral-600 leading-relaxed">{notif.message}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+
+            {/* Table Header */}
+            <div className="px-6 py-3 border-b border-neutral-200 bg-neutral-50">
+              <div className="grid grid-cols-12 gap-4 text-sm font-medium text-neutral-600">
+                <div className="col-span-1 text-center">类型</div>
+                <div className="col-span-4">标题</div>
+                <div className="col-span-5">消息内容</div>
+                <div className="col-span-2 text-center">时间</div>
               </div>
             </div>
-            <div className="flex justify-between items-center px-6 py-4 border-t border-neutral-200 bg-neutral-50 rounded-b-xl">
-              <button
-                onClick={() => alert('全部标记为已读')}
-                className="text-sm text-neutral-600 hover:text-neutral-900 transition-colors"
-              >
-                全部标记为已读
-              </button>
-              <button
-                onClick={() => setShowAllNotifications(false)}
-                className="px-4 py-2 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-              >
-                关闭
-              </button>
+
+            {/* Table Body */}
+            <div className="flex-1 overflow-y-auto">
+              {currentNotifications.length === 0 ? (
+                <div className="py-12 text-center text-neutral-500">
+                  <Bell className="w-10 h-10 mx-auto mb-2 text-neutral-300" />
+                  <p className="text-sm">暂无通知</p>
+                </div>
+              ) : (
+                <div>
+                  {currentNotifications.map((notif, index) => (
+                    <div
+                      key={notif.id}
+                      onClick={() => {
+                        setShowAllNotifications(false);
+                        handleNotificationClick(notif);
+                      }}
+                      className={`px-6 py-4 hover:bg-primary-50 transition-all duration-150 cursor-pointer ${
+                        index !== currentNotifications.length - 1 ? 'border-b border-neutral-100' : ''
+                      }`}
+                    >
+                      <div className="grid grid-cols-12 gap-4 text-sm items-center">
+                        <div className="col-span-1 flex justify-center">
+                          <div className={`w-3 h-3 rounded-full ${getNotificationIcon(notif.type)}`}></div>
+                        </div>
+                        <div className="col-span-4">
+                          <p className="font-medium text-neutral-900 truncate">{notif.title}</p>
+                        </div>
+                        <div className="col-span-5">
+                          <p className="text-neutral-600 truncate">{notif.message}</p>
+                        </div>
+                        <div className="col-span-2 text-center">
+                          <span className="text-xs text-neutral-400">{notif.time}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Pagination Footer */}
+            <div className="bg-white border-t border-neutral-200 px-6 py-3 flex items-center justify-center gap-6 rounded-b-xl">
+              <div className="text-sm text-neutral-700">
+                共 {notifications.length} 条
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className={`px-2 py-1 text-sm rounded transition-colors ${
+                    currentPage === 1
+                      ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
+                      : 'bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50'
+                  }`}
+                >
+                  &lt;
+                </button>
+
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(10, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 10) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 4) {
+                      pageNum = totalPages - 9 + i;
+                    } else {
+                      pageNum = currentPage - 4 + i;
+                    }
+
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-2.5 py-1 text-sm rounded transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {totalPages > 10 && (
+                  <>
+                    <span className="text-neutral-500">...</span>
+                    <button
+                      onClick={() => setCurrentPage(totalPages)}
+                      className={`px-2.5 py-1 text-sm rounded transition-colors ${
+                        currentPage === totalPages
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50'
+                      }`}
+                    >
+                      {totalPages}
+                    </button>
+                  </>
+                )}
+
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`px-2 py-1 text-sm rounded transition-colors ${
+                    currentPage === totalPages
+                      ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
+                      : 'bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50'
+                  }`}
+                >
+                  &gt;
+                </button>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                  className="px-2 py-1 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value={10}>10条/页</option>
+                  <option value={20}>20条/页</option>
+                  <option value={50}>50条/页</option>
+                </select>
+                <span className="text-sm text-neutral-700">前往</span>
+                <input
+                  type="number"
+                  value={jumpPage}
+                  onChange={(e) => setJumpPage(e.target.value)}
+                  placeholder="页"
+                  className="w-12 px-2 py-1 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  min={1}
+                  max={totalPages}
+                />
+                <button
+                  onClick={handleJumpToPage}
+                  className="px-3 py-1 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 transition-colors"
+                >
+                  页
+                </button>
+              </div>
             </div>
           </div>
         </div>
