@@ -485,7 +485,7 @@ const BidDocumentCheck: React.FC<BidDocumentCheckProps> = ({ canEdit = true, can
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">文件名称</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">文件来源</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">检查点</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">通过/失败</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">通过/不通过</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">状态</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">创建时间</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">操作</th>
@@ -800,7 +800,7 @@ const BidDocumentCheck: React.FC<BidDocumentCheckProps> = ({ canEdit = true, can
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-red-600">{selectedCheck.failedCheckPoints}</p>
-                      <p className="text-xs text-neutral-600 mt-1">失败</p>
+                      <p className="text-xs text-neutral-600 mt-1">不通过</p>
                     </div>
                   </div>
                 </div>
