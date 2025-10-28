@@ -608,9 +608,9 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       case 1:
         return documentName.trim() !== '';
       case 2:
-        return selectedCompany !== null;
-      case 3:
         return selectedProject !== null && fileTypes.length > 0;
+      case 3:
+        return selectedCompany !== null;
       case 4:
         return true;
       case 5:
@@ -672,8 +672,8 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
 
   const steps = [
     { number: 1, name: '项目名称' },
-    { number: 2, name: '企业知识库' },
-    { number: 3, name: '招标项目' },
+    { number: 2, name: '招标项目' },
+    { number: 3, name: '企业知识库' },
     { number: 4, name: '章节设置' },
     { number: 5, name: '文件格式' },
     { number: 6, name: '生成文件' }
@@ -1868,7 +1868,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       <div className="max-w-4xl mx-auto space-y-6 pb-32">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            第二步：选择企业知识库，并选择需要使用的企业资料。系统将使用该企业的基础信息、资质、业绩等资料生成投标文件。
+            第三步：选择企业知识库，并选择需要使用的企业资料。系统将使用该企业的基础信息、资质、业绩等资料生成投标文件。
           </p>
         </div>
 
@@ -2244,7 +2244,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       <div className="max-w-4xl mx-auto space-y-6 pb-32">
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <p className="text-sm text-blue-800">
-            第三步：选择对应的招标项目，并选择需要生成的投标文件类型。系统将根据该项目解析的文件目录结构生成投标文件。
+            第二步：选择对应的招标项目，并选择需要生成的投标文件类型。系统将根据该项目解析的文件目录结构生成投标文件。
           </p>
         </div>
 
@@ -2556,7 +2556,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
           <div className="flex-1 overflow-y-auto p-6">
             {knowledgeCategories.length === 0 ? (
               <div className="text-center py-8 text-neutral-500">
-                请先在步骤2选择企业知识库
+                请先在步骤3选择企业知识库
               </div>
             ) : (
               <div className="space-y-4">
@@ -2746,9 +2746,9 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       case 1:
         return renderStep1();
       case 2:
-        return renderStep2Combined();
-      case 3:
         return renderStep3Combined();
+      case 3:
+        return renderStep2Combined();
       case 4:
         return renderStep4New();
       case 5:

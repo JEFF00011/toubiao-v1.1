@@ -284,7 +284,7 @@ const Navigation: React.FC<NavigationProps> = ({ username = '管理员', role = 
             {/* Table Header */}
             <div className="px-6 py-3 border-b border-neutral-200 bg-neutral-50">
               <div className="grid grid-cols-12 gap-4 text-sm font-medium text-neutral-600">
-                <div className="col-span-1 text-center">类型</div>
+                <div className="col-span-1 text-center">序号</div>
                 <div className="col-span-4">标题</div>
                 <div className="col-span-5">消息内容</div>
                 <div className="col-span-2 text-center">时间</div>
@@ -313,7 +313,7 @@ const Navigation: React.FC<NavigationProps> = ({ username = '管理员', role = 
                     >
                       <div className="grid grid-cols-12 gap-4 text-sm items-center">
                         <div className="col-span-1 flex justify-center">
-                          <div className={`w-3 h-3 rounded-full ${getNotificationIcon(notif.type)}`}></div>
+                          <span className="text-neutral-900">{startIndex + index + 1}</span>
                         </div>
                         <div className="col-span-4">
                           <p className="font-medium text-neutral-900 truncate">{notif.title}</p>

@@ -574,92 +574,111 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
               </table>
             </div>
 
-            {filteredProducts().length > 0 && (
-              <div className="px-6 py-4 border-t border-neutral-200 flex items-center justify-between bg-neutral-50">
-                <div className="flex items-center space-x-2 text-sm text-neutral-600">
-                  <span>每页显示</span>
-                  <select
-                    value={itemsPerPage}
-                    onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-                    className="px-2 py-1 border border-neutral-300 rounded text-sm focus:ring-1 focus:ring-primary-500"
-                  >
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
-                  <span>条</span>
-                  <span className="ml-4">
-                    共 {filteredProducts().length} 条数据
-                  </span>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                    disabled={currentPage === 1}
-                    className="px-3 py-1 text-sm border border-neutral-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-100"
-                  >
-                    上一页
-                  </button>
-
-                  <div className="flex items-center space-x-1">
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
-                      if (totalPages <= 5) {
-                        pageNum = i + 1;
-                      } else if (currentPage <= 3) {
-                        pageNum = i + 1;
-                      } else if (currentPage >= totalPages - 2) {
-                        pageNum = totalPages - 4 + i;
-                      } else {
-                        pageNum = currentPage - 2 + i;
-                      }
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`px-2.5 py-1 text-sm rounded transition-colors ${
-                            currentPage === pageNum
-                              ? 'bg-primary-600 text-white'
-                              : 'bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50'
-                          }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <button
-                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-1 text-sm border border-neutral-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-100"
-                  >
-                    下一页
-                  </button>
-
-                  <div className="flex items-center space-x-2 ml-4">
-                    <span className="text-sm text-neutral-600">跳至</span>
-                    <input
-                      type="number"
-                      min="1"
-                      max={totalPages}
-                      value={jumpPage}
-                      onChange={(e) => setJumpPage(e.target.value)}
-                      className="w-16 px-2 py-1 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500"
-                      placeholder="页码"
-                    />
-                    <button
-                      onClick={handleJumpToPage}
-                      className="px-3 py-1 text-sm bg-primary-600 text-white rounded hover:bg-primary-700"
-                    >
-                      跳转
-                    </button>
-                  </div>
-                </div>
+            <div className="bg-white border-t border-neutral-200 px-6 py-3 flex items-center justify-center gap-6">
+              <div className="text-sm text-neutral-700">
+                共 {filteredProducts().length} 条
               </div>
-            )}
+
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className={`px-2 py-1 text-sm rounded transition-colors ${
+                    currentPage === 1
+                      ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
+                      : 'bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50'
+                  }`}
+                >
+                  &lt;
+                </button>
+
+                <div className="flex items-center space-x-1">
+                  {Array.from({ length: Math.min(10, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 10) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 4) {
+                      pageNum = totalPages - 9 + i;
+                    } else {
+                      pageNum = currentPage - 4 + i;
+                    }
+
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-2.5 py-1 text-sm rounded transition-colors ${
+                          currentPage === pageNum
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {totalPages > 10 && (
+                  <>
+                    <span className="text-neutral-500">...</span>
+                    <button
+                      onClick={() => setCurrentPage(totalPages)}
+                      className={`px-2.5 py-1 text-sm rounded transition-colors ${
+                        currentPage === totalPages
+                          ? 'bg-primary-600 text-white'
+                          : 'bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50'
+                      }`}
+                    >
+                      {totalPages}
+                    </button>
+                  </>
+                )}
+
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className={`px-2 py-1 text-sm rounded transition-colors ${
+                    currentPage === totalPages
+                      ? 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
+                      : 'bg-white border border-neutral-300 text-neutral-700 hover:bg-neutral-50'
+                  }`}
+                >
+                  &gt;
+                </button>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                  className="px-2 py-1 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value={5}>5条/页</option>
+                  <option value={10}>10条/页</option>
+                  <option value={20}>20条/页</option>
+                  <option value={50}>50条/页</option>
+                </select>
+                <span className="text-sm text-neutral-700">前往</span>
+                <input
+                  type="number"
+                  value={jumpPage}
+                  onChange={(e) => setJumpPage(e.target.value)}
+                  placeholder="页"
+                  className="w-12 px-2 py-1 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                  min={1}
+                  max={totalPages}
+                />
+                <button
+                  onClick={handleJumpToPage}
+                  className="px-3 py-1 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-50 transition-colors"
+                >
+                  页
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
