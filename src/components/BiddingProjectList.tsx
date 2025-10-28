@@ -255,15 +255,6 @@ const BiddingProjectList: React.FC<BiddingProjectListProps> = ({
                               查看
                             </button>
                           )}
-                          {project.status === 'completed' && (
-                            <button
-                              onClick={() => onDownloadProject(project)}
-                              className="px-2 py-1 text-xs text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition-colors flex items-center gap-1"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              下载
-                            </button>
-                          )}
                           {project.status === 'failed' && (
                             <button
                               onClick={() => onReparse(project)}
