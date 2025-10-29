@@ -490,7 +490,7 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
       >
         <Upload className="w-8 h-8 mx-auto text-neutral-400 mb-2" />
         <p className="text-sm text-neutral-600">点击上传文件</p>
-        <p className="text-xs text-neutral-500 mt-1">支持 JPG、PNG、PDF 格式</p>
+        <p className="text-xs text-neutral-500 mt-1">仅支持 JPG、PNG、JPEG、PDF 格式</p>
         <input
           id={`upload-${category}`}
           type="file"

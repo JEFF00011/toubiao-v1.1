@@ -463,7 +463,7 @@ const FinancialList: React.FC<FinancialListProps> = ({ companyId, readOnly = fal
                 >
                   <Upload className="w-8 h-8 mx-auto text-neutral-400 mb-2" />
                   <p className="text-sm text-neutral-600">点击或拖拽文件到此处上传（支持多选）</p>
-                  <p className="text-xs text-neutral-500 mt-1">仅支持 JPG、PNG、JPEG、PDF 格式</p>
+                  <p className="text-xs text-neutral-500 mt-1">仅支持PDF 格式</p>
                   <input
                     id="financial-upload-add"
                     type="file"

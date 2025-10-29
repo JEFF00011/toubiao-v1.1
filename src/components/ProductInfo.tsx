@@ -1112,7 +1112,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
                 >
                   <Upload className="w-6 h-6 mx-auto text-neutral-400 mb-1" />
                   <p className="text-sm text-neutral-600">点击上传（支持多选）</p>
-                  <p className="text-xs text-neutral-500 mt-1">仅支持JPG、PNG、JPEG、PDF格式</p>
+                  <p className="text-xs text-neutral-500 mt-1">仅支持JPG、PNG、JPEG、PDF、WORD格式</p>
                 </div>
                 {editingAttachment.files.length > 0 && (
                   <div className="grid grid-cols-2 gap-3">

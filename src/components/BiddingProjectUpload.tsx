@@ -38,7 +38,7 @@ const BiddingProjectUpload: React.FC<BiddingProjectUploadProps> = ({
     {
       id: 'specification',
       label: '招标技术规范书',
-      required: true,
+      required: false,
       description: '技术要求、性能指标、验收标准等技术文件'
     },
     {
@@ -283,7 +283,7 @@ const BiddingProjectUpload: React.FC<BiddingProjectUploadProps> = ({
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
               <h4 className="text-sm font-medium text-blue-900 mb-2">温馨提示</h4>
               <ul className="text-sm text-blue-700 space-y-1">
-                <li>• 招标文件和招标技术规范书为必选项，至少各上传一个</li>
+                <li>• 招标文件为必选项</li>
                 <li>• 其他文件为可选项，可上传补充材料和附件</li>
                 <li>• 支持同时上传多个文件，系统会自动合并解析</li>
                 <li>• 解析过程可能需要几分钟，请耐心等待</li>

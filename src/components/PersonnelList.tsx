@@ -120,9 +120,8 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
 
   const getStatusLabel = (status: string): string => {
     const statusMap: Record<string, string> = {
-      active: '在职',
-      resigned: '离职',
-      suspended: '停用'
+      active: '可用',
+      resigned: '不可用'
     };
     return statusMap[status] || status;
   };
@@ -582,9 +581,8 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
                     onChange={(e) => setEditingItem({ ...editingItem, status: e.target.value as any })}
                     className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
-                    <option value="active">在职</option>
-                    <option value="resigned">离职</option>
-                    <option value="suspended">停用</option>
+                    <option value="active">可用</option>
+                    <option value="resigned">不可用</option>
                   </select>
                 </div>
                 <div className="col-span-3 flex gap-6">
@@ -849,9 +847,8 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
                   className="px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                 >
                   <option value="all">全部</option>
-                  <option value="active">在职</option>
-                  <option value="resigned">离职</option>
-                  <option value="suspended">停用</option>
+                  <option value="active">可用</option>
+                  <option value="resigned">不可用</option>
                 </select>
                 是否法人
                 <select
@@ -1133,7 +1130,7 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
                 >
                   <Upload className="w-6 h-6 mx-auto text-neutral-400 mb-1" />
                   <p className="text-sm text-neutral-600">点击上传（支持多选）</p>
-                  <p className="text-xs text-neutral-500 mt-1">仅支持JPG、PNG、JPEG、PDF格式</p>
+                  <p className="text-xs text-neutral-500 mt-1">仅支持JPG、PNG、JPEG格式</p>
                 </div>
                 {editingCertificate.attachments.length > 0 && (
                   <div className="grid grid-cols-2 gap-3">
@@ -1267,7 +1264,7 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
                 >
                   <Upload className="w-6 h-6 mx-auto text-neutral-400 mb-1" />
                   <p className="text-sm text-neutral-600">点击上传（支持多选）</p>
-                  <p className="text-xs text-neutral-500 mt-1">仅支持JPG、PNG、JPEG、PDF格式</p>
+                  <p className="text-xs text-neutral-500 mt-1">仅支持JPG、PNG、JPEG格式</p>
                 </div>
                 {editingQualification.attachments.length > 0 && (
                   <div className="grid grid-cols-2 gap-3">

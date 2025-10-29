@@ -224,7 +224,7 @@ const HistoricalDocuments: React.FC<HistoricalDocumentsProps> = ({ companyId, re
               >
                 <Upload className="w-8 h-8 mx-auto text-neutral-400 mb-2" />
                 <p className="text-sm text-neutral-600 mb-1">点击上传文件（支持多选）</p>
-                <p className="text-xs text-neutral-500">仅支持 JPG、PNG、JPEG、PDF 格式</p>
+                <p className="text-xs text-neutral-500">仅支持 WORD、PDF 格式</p>
               </div>
               {editingItem.attachments.length > 0 && (
                 <div className="mt-3 space-y-2">

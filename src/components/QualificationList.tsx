@@ -705,7 +705,7 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
                   >
                     <Upload className="w-6 h-6 mx-auto text-neutral-400 mb-1" />
                     <p className="text-xs text-neutral-600">点击上传</p>
-                    <p className="text-xs text-neutral-500 mt-0.5">支持JPG、PNG格式</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">支持JPG、PNG、JPEG格式</p>
                     <input
                       id="qualification-upload-add"
                       type="file"

@@ -608,7 +608,7 @@ const CompanyBasicInfo: React.FC<CompanyBasicInfoProps> = ({ companyId, readOnly
                   >
                     <Upload className="w-6 h-6 mx-auto text-neutral-400 mb-1" />
                     <p className="text-xs text-neutral-600">点击上传</p>
-                    <p className="text-xs text-neutral-500 mt-0.5">支持JPG、PNG格式</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">支持JPG、PNG、JPEG格式</p>
                   </div>
                   <input
                     id="license-upload"
@@ -769,7 +769,7 @@ const CompanyBasicInfo: React.FC<CompanyBasicInfoProps> = ({ companyId, readOnly
                 >
                   <Upload className="w-6 h-6 mx-auto text-neutral-400 mb-1" />
                   <p className="text-xs text-neutral-600">点击上传</p>
-                  <p className="text-xs text-neutral-500 mt-0.5">支持JPG、PNG格式</p>
+                  <p className="text-xs text-neutral-500 mt-0.5">支持JPG、PNG、JPEG格式</p>
                 </div>
                 <input
                   id="bank-upload"
@@ -889,7 +889,7 @@ const CompanyBasicInfo: React.FC<CompanyBasicInfoProps> = ({ companyId, readOnly
                 >
                   <Upload className="w-6 h-6 mx-auto text-neutral-400 mb-1" />
                   <p className="text-xs text-neutral-600">点击上传</p>
-                  <p className="text-xs text-neutral-500 mt-0.5">支持JPG、PNG格式</p>
+                  <p className="text-xs text-neutral-500 mt-0.5">支持JPG、PNG、JPEG格式</p>
                 </div>
                 <input
                   id="org-chart-upload"

@@ -1187,7 +1187,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               <option value="">所有状态</option>
               {category.filters.status.map(status => (
                 <option key={status} value={status}>
-                  {status === 'valid' ? '有效' : status === 'expired' ? '已过期' : status === 'active' ? '在职' : '离职'}
+                  {status === 'valid' ? '有效' : status === 'expired' ? '已过期' : status === 'active' ? '可用' : '不可用'}
                 </option>
               ))}
             </select>
@@ -1297,7 +1297,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               <option value="">所有状态</option>
               {category.filters.status.map(status => (
                 <option key={status} value={status}>
-                  {status === 'valid' ? '有效' : status === 'expired' ? '已过期' : status === 'active' ? '在职' : '离职'}
+                  {status === 'valid' ? '有效' : status === 'expired' ? '已过期' : status === 'active' ? '可用' : '不可用'}
                 </option>
               ))}
             </select>
@@ -1448,7 +1448,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               <span className={`px-2 py-0.5 rounded ${
                 item.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-700'
               }`}>
-                {item.status === 'active' ? '在职' : '离职'}
+                {item.status === 'active' ? '可用' : '不可用'}
               </span>
             </div>
           </div>
