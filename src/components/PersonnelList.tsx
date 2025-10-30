@@ -584,18 +584,6 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
                     <span className="text-sm font-medium text-neutral-700">是否法人</span>
                   </label>
                 </div>
-                <div className="col-span-3">
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    项目经历
-                  </label>
-                  <textarea
-                    value={editingItem.projectExperience}
-                    onChange={(e) => setEditingItem({ ...editingItem, projectExperience: e.target.value })}
-                    placeholder="请输入项目经历"
-                    rows={3}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
               </div>
             </div>
 
