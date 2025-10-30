@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Upload, FileText, Trash2, Edit, AlertTriangle, FileSpreadsheet, ChevronRight, Check } from 'lucide-react';
+import { Plus, X, Upload, FileText, Trash2, Edit, AlertTriangle, FileSpreadsheet, ChevronRight, Check, Download } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 interface Invoice {
   id: string;
@@ -88,6 +89,8 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
   const [invoiceJumpPage, setInvoiceJumpPage] = useState('');
   const [currentStep, setCurrentStep] = useState(1);
   const [isEdit, setIsEdit] = useState(false);
+  const [showBatchUploadModal, setShowBatchUploadModal] = useState(false);
+  const [uploadError, setUploadError] = useState<string>('');
 
   const handleReset = () => {
     setSearchContractNumber('');
@@ -264,6 +267,104 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
       setShowProductModal(false);
       setEditingProduct(null);
     }
+  };
+
+  const handleBatchUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadError('');
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const workbook = XLSX.read(bstr, { type: 'binary' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const jsonData = XLSX.utils.sheet_to_json<any>(worksheet);
+
+        if (jsonData.length === 0) {
+          setUploadError('Excel文件为空，请检查文件内容');
+          return;
+        }
+
+        const newProducts: Product[] = jsonData.map((row, index) => {
+          const quantity = String(row['数量'] || row['quantity'] || '');
+          const unitPrice = String(row['单价'] || row['unitPrice'] || '');
+          const quantityNum = parseFloat(quantity) || 0;
+          const unitPriceNum = parseFloat(unitPrice) || 0;
+          const totalPrice = (quantityNum * unitPriceNum).toFixed(2);
+
+          return {
+            id: String(Date.now() + index),
+            productName: String(row['产品名称'] || row['productName'] || ''),
+            productSpec: String(row['产品规格'] || row['productSpec'] || ''),
+            quantity: quantity,
+            unitPrice: unitPrice,
+            totalPrice: totalPrice,
+            remarks: String(row['备注'] || row['remarks'] || '')
+          };
+        });
+
+        const validProducts = newProducts.filter(p => p.productName);
+
+        if (validProducts.length === 0) {
+          setUploadError('未找到有效的产品数据，请检查Excel格式');
+          return;
+        }
+
+        if (editingItem) {
+          setEditingItem({
+            ...editingItem,
+            products: [...editingItem.products, ...validProducts]
+          });
+        }
+
+        setShowBatchUploadModal(false);
+        alert(`成功导入 ${validProducts.length} 条产品信息`);
+      } catch (error) {
+        console.error('Excel解析错误:', error);
+        setUploadError('Excel文件解析失败，请检查文件格式');
+      }
+    };
+
+    reader.readAsBinaryString(file);
+    e.target.value = '';
+  };
+
+  const downloadTemplate = () => {
+    const template = [
+      {
+        '产品名称': '示例产品A',
+        '产品规格': 'V1.0标准版',
+        '数量': '10',
+        '单价': '5000',
+        '备注': '第一批采购'
+      },
+      {
+        '产品名称': '示例产品B',
+        '产品规格': 'V2.0专业版',
+        '数量': '5',
+        '单价': '8000',
+        '备注': ''
+      }
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(template);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '产品信息模板');
+
+    const colWidths = [
+      { wch: 20 },
+      { wch: 20 },
+      { wch: 10 },
+      { wch: 10 },
+      { wch: 20 }
+    ];
+    worksheet['!cols'] = colWidths;
+
+    XLSX.writeFile(workbook, '产品信息导入模板.xlsx');
   };
 
   const handleUploadFile = (category: keyof PerformanceProject['attachments'], file: File) => {
@@ -673,13 +774,22 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
 
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-semibold text-neutral-900">合同产品列表</h4>
-        <button
-          onClick={handleAddProduct}
-          className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors flex items-center"
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          新增产品
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowBatchUploadModal(true)}
+            className="px-3 py-1.5 text-sm bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center"
+          >
+            <FileSpreadsheet className="w-4 h-4 mr-1" />
+            批量上传
+          </button>
+          <button
+            onClick={handleAddProduct}
+            className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors flex items-center"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            新增产品
+          </button>
+        </div>
       </div>
 
       <div className="border border-neutral-200 rounded-lg overflow-hidden">
@@ -1696,6 +1806,90 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
                 className="px-4 py-2 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 保存
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showBatchUploadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full">
+            <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between">
+              <h3 className="text-lg font-medium text-neutral-900">批量上传产品信息</h3>
+              <button
+                onClick={() => {
+                  setShowBatchUploadModal(false);
+                  setUploadError('');
+                }}
+                className="text-neutral-400 hover:text-neutral-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-blue-900 mb-2">上传说明</h4>
+                <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                  <li>请先下载模板，按照模板格式填写产品信息</li>
+                  <li>必填字段：产品名称、数量、单价</li>
+                  <li>支持格式：.xlsx, .xls</li>
+                  <li>系统会自动计算总价</li>
+                </ul>
+              </div>
+
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  onClick={downloadTemplate}
+                  className="flex items-center gap-2 px-4 py-2 text-sm bg-neutral-100 text-neutral-700 rounded-lg hover:bg-neutral-200 transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  下载模板
+                </button>
+              </div>
+
+              <div className="border-2 border-dashed border-neutral-300 rounded-lg p-8">
+                <label className="flex flex-col items-center cursor-pointer hover:border-primary-500 transition-colors">
+                  <FileSpreadsheet className="w-12 h-12 text-neutral-400 mb-3" />
+                  <span className="text-sm font-medium text-neutral-700 mb-1">点击选择Excel文件</span>
+                  <span className="text-xs text-neutral-500">支持 .xlsx, .xls 格式</span>
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleBatchUpload}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              {uploadError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <p className="text-sm text-red-800">{uploadError}</p>
+                </div>
+              )}
+
+              <div className="bg-neutral-50 border border-neutral-200 rounded-lg p-3">
+                <h5 className="text-xs font-semibold text-neutral-700 mb-2">Excel列名要求：</h5>
+                <div className="grid grid-cols-2 gap-2 text-xs text-neutral-600">
+                  <div>• 产品名称 (必填)</div>
+                  <div>• 产品规格</div>
+                  <div>• 数量 (必填)</div>
+                  <div>• 单价 (必填)</div>
+                  <div>• 备注</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 bg-neutral-50 flex justify-end gap-2 rounded-b-lg">
+              <button
+                onClick={() => {
+                  setShowBatchUploadModal(false);
+                  setUploadError('');
+                }}
+                className="px-4 py-2 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-100 transition-colors"
+              >
+                关闭
               </button>
             </div>
           </div>
