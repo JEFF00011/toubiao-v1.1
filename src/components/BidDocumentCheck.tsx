@@ -483,8 +483,6 @@ const BidDocumentCheck: React.FC<BidDocumentCheckProps> = ({ canEdit = true, can
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">序号</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">检查名称</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">文件名称</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">文件来源</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">检查点</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">通过/不通过</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">状态</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">创建时间</th>
@@ -494,7 +492,7 @@ const BidDocumentCheck: React.FC<BidDocumentCheckProps> = ({ canEdit = true, can
               <tbody className="divide-y divide-neutral-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-neutral-500">
+                    <td colSpan={7} className="px-4 py-8 text-center text-neutral-500">
                       <div className="flex items-center justify-center">
                         <RefreshCw className="w-5 h-5 animate-spin mr-2" />
                         加载中...
@@ -503,7 +501,7 @@ const BidDocumentCheck: React.FC<BidDocumentCheckProps> = ({ canEdit = true, can
                   </tr>
                 ) : paginatedChecks().length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="px-4 py-8 text-center text-neutral-500">
+                    <td colSpan={7} className="px-4 py-8 text-center text-neutral-500">
                       暂无数据
                     </td>
                   </tr>
@@ -522,18 +520,6 @@ const BidDocumentCheck: React.FC<BidDocumentCheckProps> = ({ canEdit = true, can
                         <div className="max-w-xs truncate" title={check.documentName}>
                           {check.documentName}
                         </div>
-                      </td>
-                      <td className="px-4 py-2.5 whitespace-nowrap text-sm">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
-                          check.documentType === 'generated'
-                            ? 'bg-blue-100 text-blue-800'
-                            : 'bg-orange-100 text-orange-800'
-                        }`}>
-                          {check.documentType === 'generated' ? '生成文件' : '上传文件'}
-                        </span>
-                      </td>
-                      <td className="px-4 py-2.5 whitespace-nowrap text-sm text-neutral-900">
-                        {check.totalCheckPoints}
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap text-sm">
                         {(check.status === 'passed' || check.status === 'not_passed') ? (

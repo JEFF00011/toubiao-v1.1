@@ -189,6 +189,12 @@ const FinancialList: React.FC<FinancialListProps> = ({ companyId, readOnly = fal
               <h2 className="text-lg font-medium text-neutral-900">财务信息</h2>
             </div>
 
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-blue-700">
+                该模块用于管理企业的财务报告，包括年度财务报表、审计报告等。财务数据将用于证明企业的财务状况和经营能力，在投标时作为评审的重要依据。请按年度录入完整的财务信息。
+              </p>
+            </div>
+
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 时间

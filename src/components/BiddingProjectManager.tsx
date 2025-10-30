@@ -85,16 +85,25 @@ interface BiddingProjectManagerProps {
 }
 
 const BiddingProjectManager: React.FC<BiddingProjectManagerProps> = ({ canEdit = true, canDelete = true }) => {
-  const STORAGE_KEY = 'bidding_projects_v6';
+  const STORAGE_KEY = 'bidding_projects_v8';
 
   const [projects, setProjects] = useState<BiddingProject[]>(() => {
-    const savedData = localStorage.getItem(STORAGE_KEY);
-    if (savedData) {
-      return JSON.parse(savedData);
-    }
+    // 清除所有旧版本数据
+    ['bidding_projects_v7', 'bidding_projects_v6', 'bidding_projects_v5', 'bidding_projects_v4', 'bidding_projects_v3', 'bidding_projects_v2', 'bidding_projects_v1', 'bidding_projects'].forEach(key => {
+      localStorage.removeItem(key);
+    });
 
+    // 直接使用初始示例数据，不读取localStorage
     // 初始示例数据 - 每种状态1条，按上传时间倒序
     return [
+      {
+        id: '5',
+        projectName: '城市轨道交通信号系统项目',
+        status: 'parsing',
+        uploadTime: '2025-10-13 10:15:00',
+        fileName: '城市轨道交通信号系统招标文件.pdf',
+        parseProgress: 65
+      },
       {
         id: '4',
         projectName: '软件系统开发项目',

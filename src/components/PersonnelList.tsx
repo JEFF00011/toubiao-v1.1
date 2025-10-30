@@ -562,18 +562,6 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    职务 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={editingItem.position}
-                    onChange={(e) => setEditingItem({ ...editingItem, position: e.target.value })}
-                    placeholder="请输入职务"
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
                     状态 <span className="text-red-500">*</span>
                   </label>
                   <select
@@ -830,6 +818,12 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
               <h2 className="text-lg font-medium text-neutral-900">人员信息</h2>
             </div>
 
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-blue-700">
+                该模块用于管理企业的人员信息，包括员工的基本信息、职称资质、学历证书等。人员信息将用于生成投标文件中的项目团队介绍、人员配备表等内容，并在投标时自动匹配项目对人员的要求。请保持人员信息的准确和完整。
+              </p>
+            </div>
+
             <div className="space-y-3">
               <div className="flex items-center gap-3 flex-wrap">
                 姓名
@@ -899,7 +893,6 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">姓名</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">性别</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">联系电话</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">职务</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">是否法人</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">人员状态</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">证书数量</th>
@@ -910,7 +903,7 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
               <tbody className="divide-y divide-neutral-200">
                 {paginatedItems().length === 0 ? (
                   <tr>
-                    <td colSpan={10} className="px-4 py-8 text-center text-neutral-500">
+                    <td colSpan={9} className="px-4 py-8 text-center text-neutral-500">
                       暂无数据
                     </td>
                   </tr>
@@ -930,9 +923,6 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
                         </td>
                         <td className="px-4 py-2.5 whitespace-nowrap text-sm text-neutral-900">
                           {item.phone}
-                        </td>
-                        <td className="px-4 py-2.5 whitespace-nowrap text-sm text-neutral-900">
-                          {item.position}
                         </td>
                         <td className="px-4 py-2.5 whitespace-nowrap text-sm text-neutral-900">
                           {item.isLegalPerson ? '是' : '否'}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Upload, AlertTriangle, CreditCard as Edit, Trash2, Sparkles } from 'lucide-react';
+import { Plus, X, Upload, AlertTriangle, CreditCard as Edit, Trash2 } from 'lucide-react';
 
 interface Qualification {
   id: string;
@@ -190,6 +190,12 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
           <div className="px-6 py-4 border-b border-neutral-200">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-medium text-neutral-900">资质信息</h2>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-blue-700">
+                该模块用于管理企业的各类资质证书，包括但不限于建筑业企业资质、ISO认证、各类许可证等。这些资质信息将用于证明企业的业务能力和技术水平，并在生成投标文件时自动匹配招标要求。请及时更新过期资质，并保持信息完整。
+              </p>
             </div>
 
             <div className="space-y-3">
@@ -671,28 +677,6 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>
-                            {index === 0 && (
-                              <button
-                                onClick={() => {
-                                  setEditingItem({
-                                    ...editingItem,
-                                    name: 'ISO9001质量管理体系认证',
-                                    certNumber: 'ISO9001-2024-001',
-                                    certScope: '软件开发、系统集成',
-                                    certOrganization: '中国质量认证中心',
-                                    rating: '无',
-                                    validFrom: '2024-01-01',
-                                    validUntil: '2025-12-31',
-                                    isPermanent: false
-                                  });
-                                  alert('已自动填充资质信息');
-                                }}
-                                className="absolute bottom-1 right-1 flex items-center space-x-1 px-2 py-1 text-xs font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors shadow-md"
-                              >
-                                <Sparkles className="w-3 h-3" />
-                                <span>智能填充</span>
-                              </button>
-                            )}
                             <p className="text-xs text-neutral-600 mt-1 truncate">{file.name}</p>
                           </div>
                         ))}
@@ -714,6 +698,7 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
                       multiple
                       onChange={(e) => {
                         const files = Array.from(e.target.files || []);
+                        const isFirstUpload = editingItem.attachments.length === 0;
                         const newFiles = files.map(f => ({
                           id: String(Date.now() + Math.random()),
                           name: f.name,
@@ -723,6 +708,19 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
                           ...prev,
                           attachments: [...prev.attachments, ...newFiles]
                         }));
+                        if (isFirstUpload && files.length > 0) {
+                          setEditingItem(prev => ({
+                            ...prev,
+                            name: 'ISO9001质量管理体系认证',
+                            certNumber: 'ISO9001-2024-001',
+                            certScope: '软件开发、系统集成',
+                            certOrganization: '中国质量认证中心',
+                            rating: '无',
+                            validFrom: '2024-01-01',
+                            validUntil: '2025-12-31',
+                            isPermanent: false
+                          }));
+                        }
                       }}
                     />
                   </div>
@@ -934,28 +932,6 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>
-                            {index === 0 && (
-                              <button
-                                onClick={() => {
-                                  setEditingItem({
-                                    ...editingItem,
-                                    name: 'ISO9001质量管理体系认证',
-                                    certNumber: 'ISO9001-2024-001',
-                                    certScope: '软件开发、系统集成',
-                                    certOrganization: '中国质量认证中心',
-                                    rating: '无',
-                                    validFrom: '2024-01-01',
-                                    validUntil: '2025-12-31',
-                                    isPermanent: false
-                                  });
-                                  alert('已自动填充资质信息');
-                                }}
-                                className="absolute bottom-1 right-1 flex items-center space-x-1 px-2 py-1 text-xs font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors shadow-md"
-                              >
-                                <Sparkles className="w-3 h-3" />
-                                <span>智能填充</span>
-                              </button>
-                            )}
                             <p className="text-xs text-neutral-600 mt-1 truncate">{file.name}</p>
                           </div>
                         ))}
@@ -977,6 +953,7 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
                       multiple
                       onChange={(e) => {
                         const files = Array.from(e.target.files || []);
+                        const isFirstUpload = editingItem.attachments.length === 0;
                         const newFiles = files.map(f => ({
                           id: String(Date.now() + Math.random()),
                           name: f.name,
@@ -986,6 +963,19 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
                           ...prev,
                           attachments: [...prev.attachments, ...newFiles]
                         }));
+                        if (isFirstUpload && files.length > 0) {
+                          setEditingItem(prev => ({
+                            ...prev,
+                            name: 'ISO9001质量管理体系认证',
+                            certNumber: 'ISO9001-2024-001',
+                            certScope: '软件开发、系统集成',
+                            certOrganization: '中国质量认证中心',
+                            rating: '无',
+                            validFrom: '2024-01-01',
+                            validUntil: '2025-12-31',
+                            isPermanent: false
+                          }));
+                        }
                       }}
                     />
                   </div>

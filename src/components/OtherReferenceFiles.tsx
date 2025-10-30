@@ -285,6 +285,12 @@ const OtherReferenceFiles: React.FC<OtherReferenceFilesProps> = ({ companyId, re
               <h2 className="text-lg font-medium text-neutral-900">其他参考文件</h2>
             </div>
 
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-blue-700">
+                该模块用于存储其他类型的参考文件，如售后服务保障、质量保证措施等。这些文件可以在生成投标文件时作为参考和素材使用，丰富文件内容。请按照文件类型分类存储，方便查找和使用。
+              </p>
+            </div>
+
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 文件名称

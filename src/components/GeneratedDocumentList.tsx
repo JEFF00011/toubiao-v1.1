@@ -94,6 +94,13 @@ const GeneratedDocumentList: React.FC<GeneratedDocumentListProps> = ({
     }
   };
 
+  const formatDateTime = (dateTimeStr: string) => {
+    if (dateTimeStr.includes(':')) {
+      return dateTimeStr;
+    }
+    return `${dateTimeStr} 00:00:00`;
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       draft: { label: '草稿', className: 'bg-neutral-100 text-neutral-700' },
@@ -237,44 +244,65 @@ const GeneratedDocumentList: React.FC<GeneratedDocumentListProps> = ({
                         </div>
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap text-sm text-neutral-900">
-                        {doc.createdAt}
+                        {formatDateTime(doc.createdAt)}
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap text-sm">
                         <div className="flex items-center space-x-2">
-                          {doc.status === 'completed' && (
-                            <button
-                              onClick={() => onViewDocument(doc)}
-                              className="px-2 py-1 text-xs text-primary-600 hover:text-primary-800 hover:bg-primary-50 rounded transition-colors flex items-center gap-1"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                              查看
-                            </button>
+                          {doc.status === 'generating' ? (
+                            <>
+                              <button
+                                disabled
+                                className="px-2 py-1 text-xs text-neutral-400 cursor-not-allowed rounded flex items-center gap-1"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                                编辑
+                              </button>
+                              <button
+                                disabled
+                                className="px-2 py-1 text-xs text-neutral-400 cursor-not-allowed rounded flex items-center gap-1"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                删除
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              {doc.status === 'completed' && (
+                                <button
+                                  onClick={() => onViewDocument(doc)}
+                                  className="px-2 py-1 text-xs text-primary-600 hover:text-primary-800 hover:bg-primary-50 rounded transition-colors flex items-center gap-1"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  查看
+                                </button>
+                              )}
+                              {doc.status === 'draft' && (
+                                <button
+                                  onClick={() => onEditDocument(doc)}
+                                  className="px-2 py-1 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors flex items-center gap-1"
+                                >
+                                  <Edit className="w-3.5 h-3.5" />
+                                  编辑
+                                </button>
+                              )}
+                              {doc.status === 'completed' && (
+                                <button
+                                  onClick={() => onDownloadDocument(doc)}
+                                  className="px-2 py-1 text-xs text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition-colors flex items-center gap-1"
+                                >
+                                  <Download className="w-3.5 h-3.5" />
+                                  下载
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handleDeleteClick(doc)}
+                                className="px-2 py-1 text-xs text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors flex items-center gap-1"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                删除
+                              </button>
+                            </>
                           )}
-                          {doc.status === 'draft' && (
-                            <button
-                              onClick={() => onEditDocument(doc)}
-                              className="px-2 py-1 text-xs text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors flex items-center gap-1"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                              编辑
-                            </button>
-                          )}
-                          {doc.status === 'completed' && (
-                            <button
-                              onClick={() => onDownloadDocument(doc)}
-                              className="px-2 py-1 text-xs text-green-600 hover:text-green-800 hover:bg-green-50 rounded transition-colors flex items-center gap-1"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              下载
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDeleteClick(doc)}
-                            className="px-2 py-1 text-xs text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors flex items-center gap-1"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            删除
-                          </button>
                         </div>
                       </td>
                     </tr>

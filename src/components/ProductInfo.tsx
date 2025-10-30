@@ -23,6 +23,7 @@ interface Product {
   specification: string;
   model: string;
   description: string;
+  source: 'own' | 'agency';
   attachments: ProductAttachment[];
   createdAt?: string;
 }
@@ -102,6 +103,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
       specification: '',
       model: '',
       description: '',
+      source: 'own',
       attachments: []
     });
     setShowModal(true);
@@ -409,6 +411,12 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
                 <h2 className="text-lg font-medium text-neutral-900">产品信息</h2>
               </div>
 
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <p className="text-sm text-blue-700">
+                  该模块用于管理企业的产品信息，包括生产设备、检测设备和企业产品三大类别。产品信息将用于生成投标文件中的产品介绍、设备清单等内容。其中，企业产品可以标注产品来源（自有产品或代理产品）。请详细填写产品信息和相关附件。
+                </p>
+              </div>
+
               <div className="flex space-x-2 mb-4">
                 {(Object.keys(categoryNames) as Array<keyof typeof categoryNames>).map(category => (
                   <button
@@ -525,6 +533,9 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">产品名称</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">产品品牌</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">产品型号</th>
+                    {activeCategory === 'companyProducts' && (
+                      <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">产品来源</th>
+                    )}
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">相关附件</th>
                     <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">操作</th>
                   </tr>
@@ -532,7 +543,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
                 <tbody className="divide-y divide-neutral-200">
                   {paginatedProducts().length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-4 py-8 text-center text-neutral-500">
+                      <td colSpan={activeCategory === 'companyProducts' ? 8 : 7} className="px-4 py-8 text-center text-neutral-500">
                         暂无数据
                       </td>
                     </tr>
@@ -546,6 +557,15 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
                         <td className="px-4 py-3 text-sm text-neutral-900">{product.name}</td>
                         <td className="px-4 py-3 text-sm text-neutral-600">{product.brand || '-'}</td>
                         <td className="px-4 py-3 text-sm text-neutral-600">{product.model || '-'}</td>
+                        {activeCategory === 'companyProducts' && (
+                          <td className="px-4 py-3 text-sm text-neutral-600">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                              product.source === 'own' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                            }`}>
+                              {product.source === 'own' ? '自有产品' : '代理产品'}
+                            </span>
+                          </td>
+                        )}
                         <td className="px-4 py-3 text-sm text-neutral-600">{product.attachments.length}个</td>
                         <td className="px-4 py-3 text-sm">
                           <div className="flex items-center space-x-2">
@@ -892,6 +912,21 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
                       className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     />
                   </div>
+                  {activeCategory === 'companyProducts' && (
+                    <div>
+                      <label className="block text-sm font-medium text-neutral-700 mb-1">
+                        产品来源 <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={editingProduct.source}
+                        onChange={(e) => setEditingProduct({ ...editingProduct, source: e.target.value as 'own' | 'agency' })}
+                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      >
+                        <option value="own">自有产品</option>
+                        <option value="agency">代理产品</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-4">

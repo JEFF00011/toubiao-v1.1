@@ -38,7 +38,7 @@ interface DirectoryItem {
   id: string;
   title: string;
   level: number;
-  wordCount: number;
+  generationMode: 'copy' | 'brief' | 'detailed';
   selectedKnowledgeItems?: string[];
   selectedReferenceItems?: string[];
   children: DirectoryItem[];
@@ -62,6 +62,7 @@ interface KnowledgeItem {
   projectName?: string;
   clientName?: string;
   position?: string;
+  projectPosition?: string;
   contractNumber?: string;
   contractAmount?: string;
   productName?: string;
@@ -349,35 +350,27 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       id: 'authorizedDelegate',
       name: '人员信息 - 授权委托人',
       items: [
-        { id: 'per_1', name: '张三', position: '项目经理', status: 'active', uploadTime: '2024-10-22', selected: true },
-        { id: 'per_2', name: '李四', position: '技术总监', status: 'active', uploadTime: '2024-10-20', selected: true },
-        { id: 'per_3', name: '王五', position: '项目经理', status: 'active', uploadTime: '2024-10-15', selected: false },
-        { id: 'per_4', name: '赵六', position: '架构师', status: 'active', uploadTime: '2024-09-28', selected: false },
-        { id: 'per_5', name: '孙七', position: '开发经理', status: 'resigned', uploadTime: '2024-08-10', selected: false },
-        { id: 'per_6', name: '周八', position: '测试经理', status: 'active', uploadTime: '2024-09-15', selected: false },
-        { id: 'per_7', name: '吴九', position: '运维工程师', status: 'active', uploadTime: '2024-09-01', selected: false }
+        { id: 'per_1', name: '张三', position: '其他人员', status: 'active', uploadTime: '2024-10-22', selected: true },
+        { id: 'per_2', name: '李四', position: '其他人员', status: 'active', uploadTime: '2024-10-20', selected: true },
+        { id: 'per_3', name: '王五', position: '其他人员', status: 'active', uploadTime: '2024-10-15', selected: false },
+        { id: 'per_4', name: '赵六', position: '其他人员', status: 'active', uploadTime: '2024-09-28', selected: false },
+        { id: 'per_5', name: '孙七', position: '其他人员', status: 'resigned', uploadTime: '2024-08-10', selected: false },
+        { id: 'per_6', name: '周八', position: '其他人员', status: 'active', uploadTime: '2024-09-15', selected: false },
+        { id: 'per_7', name: '吴九', position: '其他人员', status: 'active', uploadTime: '2024-09-01', selected: false }
       ],
-      filters: {
-        position: ['项目经理', '技术总监', '架构师', '开发经理', '测试经理', '运维工程师'],
-        status: ['active', 'resigned']
-      }
     },
     {
       id: 'otherPersonnel',
       name: '人员信息 - 其他人员',
       items: [
-        { id: 'per_1', name: '张三', position: '项目经理', status: 'active', uploadTime: '2024-10-22', selected: true },
-        { id: 'per_2', name: '李四', position: '技术总监', status: 'active', uploadTime: '2024-10-20', selected: true },
-        { id: 'per_3', name: '王五', position: '项目经理', status: 'active', uploadTime: '2024-10-15', selected: false },
-        { id: 'per_4', name: '赵六', position: '架构师', status: 'active', uploadTime: '2024-09-28', selected: false },
-        { id: 'per_5', name: '孙七', position: '开发经理', status: 'resigned', uploadTime: '2024-08-10', selected: false },
-        { id: 'per_6', name: '周八', position: '测试经理', status: 'active', uploadTime: '2024-09-15', selected: false },
-        { id: 'per_7', name: '吴九', position: '运维工程师', status: 'active', uploadTime: '2024-09-01', selected: false }
+        { id: 'per_1', name: '张三', position: '其他人员', projectPosition: '项目经理', status: 'active', uploadTime: '2024-10-22', selected: true },
+        { id: 'per_2', name: '李四', position: '其他人员', projectPosition: '技术总监', status: 'active', uploadTime: '2024-10-20', selected: true },
+        { id: 'per_3', name: '王五', position: '其他人员', projectPosition: '', status: 'active', uploadTime: '2024-10-15', selected: false },
+        { id: 'per_4', name: '赵六', position: '其他人员', projectPosition: '', status: 'active', uploadTime: '2024-09-28', selected: false },
+        { id: 'per_5', name: '孙七', position: '其他人员', projectPosition: '', status: 'resigned', uploadTime: '2024-08-10', selected: false },
+        { id: 'per_6', name: '周八', position: '其他人员', projectPosition: '', status: 'active', uploadTime: '2024-09-15', selected: false },
+        { id: 'per_7', name: '吴九', position: '其他人员', projectPosition: '', status: 'active', uploadTime: '2024-09-01', selected: false }
       ],
-      filters: {
-        position: ['项目经理', '技术总监', '架构师', '开发经理', '测试经理', '运维工程师'],
-        status: ['active', 'resigned']
-      }
     },
     {
       id: 'productionEquipment',
@@ -407,9 +400,9 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       id: 'companyProducts',
       name: '产品信息 - 企业产品',
       items: [
-        { id: 'cprod_1', name: '企业级路由器 ER8300G', productCategory: '网络设备', productBrand: '华为', productSpec: '企业级', productModel: 'ER8300G', selected: true },
-        { id: 'cprod_2', name: '高性能交换机 S5720-SI', productCategory: '网络设备', productBrand: '华为', productSpec: '千兆24口', productModel: 'S5720-28P-SI', selected: true },
-        { id: 'cprod_3', name: 'Dell PowerEdge R740 服务器', productCategory: '服务器', productBrand: 'Dell', productSpec: '2U机架式', productModel: 'R740', selected: true }
+        { id: 'cprod_1', name: '企业级路由器 ER8300G', productCategory: '自由产品', productBrand: '华为', productSpec: '企业级', productModel: 'ER8300G', selected: true },
+        { id: 'cprod_2', name: '高性能交换机 S5720-SI', productCategory: '自由产品', productBrand: '华为', productSpec: '千兆24口', productModel: 'S5720-28P-SI', selected: true },
+        { id: 'cprod_3', name: 'Dell PowerEdge R740 服务器', productCategory: '代理产品', productBrand: 'Dell', productSpec: '2U机架式', productModel: 'R740', selected: true }
       ],
       filters: {
         productCategory: ['网络设备', '计算机设备', '服务器', '办公设备']
@@ -453,7 +446,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         id: `item-${index}`,
         title: cleanTitle,
         level,
-        wordCount: 1800,
+        generationMode: 'detailed',
         children: []
       };
 
@@ -512,24 +505,24 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     setSelectedFormat(defaultFormat || companyFormats[0] || null);
   };
 
-  const updateWordCount = (itemId: string, count: number, items: DirectoryItem[]): DirectoryItem[] => {
+  const updateGenerationMode = (itemId: string, mode: 'copy' | 'brief' | 'detailed', items: DirectoryItem[]): DirectoryItem[] => {
     return items.map(item => {
       if (item.id === itemId) {
-        return { ...item, wordCount: count };
+        return { ...item, generationMode: mode };
       }
       if (item.children.length > 0) {
-        return { ...item, children: updateWordCount(itemId, count, item.children) };
+        return { ...item, children: updateGenerationMode(itemId, mode, item.children) };
       }
       return item;
     });
   };
 
-  const updateCommercialWordCount = (itemId: string, count: number) => {
-    setCommercialDirectory(prev => updateWordCount(itemId, count, prev));
+  const updateCommercialGenerationMode = (itemId: string, mode: 'copy' | 'brief' | 'detailed') => {
+    setCommercialDirectory(prev => updateGenerationMode(itemId, mode, prev));
   };
 
-  const updateTechnicalWordCount = (itemId: string, count: number) => {
-    setTechnicalDirectory(prev => updateWordCount(itemId, count, prev));
+  const updateTechnicalGenerationMode = (itemId: string, mode: 'copy' | 'brief' | 'detailed') => {
+    setTechnicalDirectory(prev => updateGenerationMode(itemId, mode, prev));
   };
 
   const toggleKnowledgeItem = (categoryId: string, itemId: string) => {
@@ -538,9 +531,16 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
         if (cat.id === categoryId) {
           return {
             ...cat,
-            items: cat.items.map(item =>
-              item.id === itemId ? { ...item, selected: !item.selected } : item
-            )
+            items: cat.items.map(item => {
+              if (item.id === itemId) {
+                const isPersonnelCategory = categoryId === 'legalPerson' || categoryId === 'authorizedDelegate' || categoryId === 'otherPersonnel';
+                if (isPersonnelCategory && item.status === 'resigned' && !item.selected) {
+                  return item;
+                }
+                return { ...item, selected: !item.selected };
+              }
+              return item;
+            })
           };
         }
         return cat;
@@ -620,9 +620,17 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
     }
   };
 
-  const renderDirectoryTree = (items: DirectoryItem[], level: number = 0, onUpdate: (id: string, count: number) => void, directoryType: 'commercial' | 'technical' = 'commercial') => {
+  const renderDirectoryTree = (items: DirectoryItem[], level: number = 0, onUpdate: (id: string, mode: 'copy' | 'brief' | 'detailed') => void, directoryType: 'commercial' | 'technical' = 'commercial') => {
     return items.map(item => {
       const selectedCount = item.selectedKnowledgeItems?.length || 0;
+
+      const getModeLabel = (mode: 'copy' | 'brief' | 'detailed') => {
+        switch (mode) {
+          case 'copy': return '仅复制';
+          case 'brief': return '简要生成';
+          case 'detailed': return '详细生成';
+        }
+      };
 
       return (
         <div key={item.id} style={{ paddingLeft: `${level * 24}px` }}>
@@ -651,17 +659,18 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 <BookOpen className="w-3.5 h-3.5" />
                 <span>{selectedCount > 0 ? `已选${selectedCount}` : '选择资料'}</span>
               </button>
-              <input
-                type="number"
-                value={item.wordCount}
+              <select
+                value={item.generationMode}
                 onChange={(e) => {
-                  const newCount = parseInt(e.target.value) || 0;
-                  onUpdate(item.id, newCount);
+                  onUpdate(item.id, e.target.value as 'copy' | 'brief' | 'detailed');
                 }}
                 disabled={isViewMode}
-                className="w-20 px-2 py-1 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
-              />
-              <span className="text-sm text-neutral-500">字</span>
+                className="px-2 py-1 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
+              >
+                <option value="copy">仅复制</option>
+                <option value="brief">简要生成</option>
+                <option value="detailed">详细生成</option>
+              </select>
             </div>
           </div>
           {item.children.length > 0 && renderDirectoryTree(item.children, level + 1, onUpdate, directoryType)}
@@ -880,7 +889,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               </div>
               <div className="max-h-96 overflow-y-auto p-4">
                 {commercialDirectory.length > 0 ? (
-                  renderDirectoryTree(commercialDirectory, 0, updateCommercialWordCount, 'commercial')
+                  renderDirectoryTree(commercialDirectory, 0, updateCommercialGenerationMode, 'commercial')
                 ) : (
                   <p className="text-center text-neutral-500 py-8">该项目暂无商务文件目录</p>
                 )}
@@ -895,7 +904,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
               </div>
               <div className="max-h-96 overflow-y-auto p-4">
                 {technicalDirectory.length > 0 ? (
-                  renderDirectoryTree(technicalDirectory, 0, updateTechnicalWordCount, 'technical')
+                  renderDirectoryTree(technicalDirectory, 0, updateTechnicalGenerationMode, 'technical')
                 ) : (
                   <p className="text-center text-neutral-500 py-8">该项目暂无技术文件目录</p>
                 )}
@@ -1438,7 +1447,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
       );
     }
 
-    if (category.id === 'legalPerson' || category.id === 'authorizedDelegate' || category.id === 'otherPersonnel') {
+    if (category.id === 'legalPerson' || category.id === 'authorizedDelegate') {
       return (
         <div className="ml-3 flex-1">
           <div className="flex items-center justify-between">
@@ -1451,6 +1460,53 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                 {item.status === 'active' ? '可用' : '不可用'}
               </span>
             </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (category.id === 'otherPersonnel') {
+      return (
+        <div className="ml-3 flex-1">
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-neutral-900">{item.name}</span>
+              <div className="flex items-center space-x-3 text-xs text-neutral-600">
+                <span>职位：{item.position}</span>
+                <span className={`px-2 py-0.5 rounded ${
+                  item.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-neutral-100 text-neutral-700'
+                }`}>
+                  {item.status === 'active' ? '可用' : '不可用'}
+                </span>
+              </div>
+            </div>
+            {item.selected && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-neutral-600 flex-shrink-0">项目职位：</span>
+                <input
+                  type="text"
+                  value={item.projectPosition || ''}
+                  onChange={(e) => {
+                    setKnowledgeCategories(prev =>
+                      prev.map(cat => {
+                        if (cat.id === category.id) {
+                          return {
+                            ...cat,
+                            items: cat.items.map(i =>
+                              i.id === item.id ? { ...i, projectPosition: e.target.value } : i
+                            )
+                          };
+                        }
+                        return cat;
+                      })
+                    );
+                  }}
+                  placeholder="请输入在本项目中的职位"
+                  disabled={isViewMode}
+                  className="flex-1 px-2 py-1 text-xs border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500 disabled:bg-neutral-50 disabled:cursor-not-allowed"
+                />
+              </div>
+            )}
           </div>
         </div>
       );
@@ -1803,7 +1859,8 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
             ) : (
               filteredItems.map(item => {
                 const isExpired = (activeCategory.id === 'qualification' && item.status === 'expired');
-                const isResigned = (activeCategory.id === 'personnel' && item.status === 'resigned');
+                const isPersonnelCategory = activeCategory.id === 'legalPerson' || activeCategory.id === 'authorizedDelegate' || activeCategory.id === 'otherPersonnel';
+                const isResigned = (isPersonnelCategory && item.status === 'resigned');
                 const isDisabled = isViewMode || isExpired || isResigned;
 
                 return (
@@ -1812,7 +1869,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                     className={`flex items-center p-3 rounded border border-transparent ${
                       !isDisabled ? 'hover:bg-neutral-50 hover:border-neutral-200 cursor-pointer' : 'cursor-not-allowed bg-neutral-50 opacity-60'
                     } ${item.selected ? 'bg-primary-50 border-primary-200' : ''}`}
-                    title={isExpired ? '已过期资质无法选择' : isResigned ? '离职人员无法选择' : ''}
+                    title={isExpired ? '已过期资质无法选择' : isResigned ? '不可用人员无法选择' : ''}
                   >
                     <input
                       type="checkbox"
@@ -2195,7 +2252,8 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                   ) : (
                     filteredItems.map(item => {
                       const isExpired = (activeCategory.id === 'qualification' && item.status === 'expired');
-                      const isResigned = (activeCategory.id === 'personnel' && item.status === 'resigned');
+                      const isPersonnelCategory = activeCategory.id === 'legalPerson' || activeCategory.id === 'authorizedDelegate' || activeCategory.id === 'otherPersonnel';
+                      const isResigned = (isPersonnelCategory && item.status === 'resigned');
                       const isDisabled = isViewMode || isExpired || isResigned;
 
                       return (
@@ -2204,7 +2262,7 @@ const DocumentGenerator: React.FC<DocumentGeneratorProps> = ({
                           className={`flex items-center p-3 rounded border border-transparent ${
                             !isDisabled ? 'hover:bg-neutral-50 hover:border-neutral-200 cursor-pointer' : 'cursor-not-allowed bg-neutral-50 opacity-60'
                           } ${item.selected ? 'bg-primary-50 border-primary-200' : ''}`}
-                          title={isExpired ? '已过期资质无法选择' : isResigned ? '离职人员无法选择' : ''}
+                          title={isExpired ? '已过期资质无法选择' : isResigned ? '不可用人员无法选择' : ''}
                         >
                           <input
                             type="checkbox"

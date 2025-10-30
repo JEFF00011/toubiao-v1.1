@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, FileText, Edit, AlertTriangle, X, Image, Trash2, Sparkles } from 'lucide-react';
+import { Upload, FileText, Edit, AlertTriangle, X, Image, Trash2 } from 'lucide-react';
 
 interface FileAttachment {
   id: string;
@@ -178,6 +178,14 @@ const CompanyBasicInfo: React.FC<CompanyBasicInfoProps> = ({ companyId, readOnly
         <div className="bg-white rounded-lg border border-neutral-200">
           <div className="px-6 py-4 border-b border-neutral-200">
             <h2 className="text-lg font-medium text-neutral-900">公司基础信息</h2>
+          </div>
+
+          <div className="px-6 pt-4">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <p className="text-sm text-blue-700">
+                该模块用于管理企业的基础信息，包括营业执照、银行账户和公司简介。这些信息将用于生成投标文件中的公司介绍、资质证明等内容。请确保信息准确完整，并及时更新。
+              </p>
+            </div>
           </div>
 
           <div className="p-6 space-y-6">
@@ -573,29 +581,6 @@ const CompanyBasicInfo: React.FC<CompanyBasicInfoProps> = ({ companyId, readOnly
                             >
                               <Trash2 className="w-3 h-3" />
                             </button>
-                            {index === 0 && (
-                              <button
-                                onClick={() => {
-                                  setEditingLicense({
-                                    ...editingLicense,
-                                    companyName: '北京智慧科技有限公司',
-                                    creditCode: '91110108MA01ABCD12',
-                                    legalPerson: '李四',
-                                    registeredCapital: '5000万元',
-                                    establishDate: '2021-03-20',
-                                    registeredAddress: '北京市海淀区科技园区中关村东路88号',
-                                    validUntil: '2031-03-20',
-                                    isPermanent: false,
-                                    businessScope: '技术开发、技术推广、技术转让、技术咨询、技术服务；软件开发；计算机系统服务；数据处理；基础软件服务；应用软件服务'
-                                  });
-                                  alert('已自动填充营业执照信息');
-                                }}
-                                className="absolute bottom-1 right-1 flex items-center space-x-1 px-2 py-1 text-xs font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors shadow-md"
-                              >
-                                <Sparkles className="w-3 h-3" />
-                                <span>智能填充</span>
-                              </button>
-                            )}
                             <p className="text-xs text-neutral-600 mt-1 truncate">{file.name}</p>
                           </div>
                         ))}
@@ -620,6 +605,8 @@ const CompanyBasicInfo: React.FC<CompanyBasicInfoProps> = ({ companyId, readOnly
                       const files = Array.from(e.target.files || []);
                       if (files.length === 0) return;
 
+                      const isFirstUpload = !editingLicense.attachments || editingLicense.attachments.length === 0;
+
                       for (const file of files) {
                         if (file.size > 50 * 1024 * 1024) {
                           alert(`文件 ${file.name} 大小超过50MB`);
@@ -641,6 +628,22 @@ const CompanyBasicInfo: React.FC<CompanyBasicInfoProps> = ({ companyId, readOnly
                           alert(`文件 ${file.name} 读取失败`);
                         }
                       }
+
+                      if (isFirstUpload && files.length > 0) {
+                        setEditingLicense(prev => ({
+                          ...prev,
+                          companyName: '北京智慧科技有限公司',
+                          creditCode: '91110108MA01ABCD12',
+                          legalPerson: '李四',
+                          registeredCapital: '5000万元',
+                          establishDate: '2021-03-20',
+                          registeredAddress: '北京市海淀区科技园区中关村东路88号',
+                          validUntil: '2031-03-20',
+                          isPermanent: false,
+                          businessScope: '技术开发、技术推广、技术转让、技术咨询、技术服务；软件开发；计算机系统服务；数据处理；基础软件服务；应用软件服务'
+                        }));
+                      }
+
                       e.target.value = '';
                     }}
                   />
@@ -740,23 +743,6 @@ const CompanyBasicInfo: React.FC<CompanyBasicInfoProps> = ({ companyId, readOnly
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
-                          {index === 0 && (
-                            <button
-                              onClick={() => {
-                                setEditingBank({
-                                  ...editingBank,
-                                  companyName: '北京智慧科技有限公司',
-                                  bankName: '中国工商银行北京海淀支行',
-                                  accountNumber: '0200 1234 5678 9012 345'
-                                });
-                                alert('已自动填充开户行信息');
-                              }}
-                              className="absolute bottom-1 right-1 flex items-center space-x-1 px-2 py-1 text-xs font-medium text-white bg-primary-600 rounded-md hover:bg-primary-700 transition-colors shadow-md"
-                            >
-                              <Sparkles className="w-3 h-3" />
-                              <span>智能填充</span>
-                            </button>
-                          )}
                           <p className="text-xs text-neutral-600 mt-1 truncate">{file.name}</p>
                         </div>
                       ))}
@@ -781,6 +767,8 @@ const CompanyBasicInfo: React.FC<CompanyBasicInfoProps> = ({ companyId, readOnly
                     const files = Array.from(e.target.files || []);
                     if (files.length === 0) return;
 
+                    const isFirstUpload = !editingBank.attachments || editingBank.attachments.length === 0;
+
                     for (const file of files) {
                       if (file.size > 50 * 1024 * 1024) {
                         alert(`文件 ${file.name} 大小超过50MB`);
@@ -802,6 +790,16 @@ const CompanyBasicInfo: React.FC<CompanyBasicInfoProps> = ({ companyId, readOnly
                         alert(`文件 ${file.name} 读取失败`);
                       }
                     }
+
+                    if (isFirstUpload && files.length > 0) {
+                      setEditingBank(prev => ({
+                        ...prev,
+                        companyName: '北京智慧科技有限公司',
+                        bankName: '中国工商银行北京海淀支行',
+                        accountNumber: '0200 1234 5678 9012 345'
+                      }));
+                    }
+
                     e.target.value = '';
                   }}
                 />

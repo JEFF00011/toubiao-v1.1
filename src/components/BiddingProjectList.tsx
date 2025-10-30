@@ -39,6 +39,8 @@ const BiddingProjectList: React.FC<BiddingProjectListProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [jumpPage, setJumpPage] = useState('');
+  const [showEditConfirmModal, setShowEditConfirmModal] = useState(false);
+  const [editingProject, setEditingProject] = useState<BiddingProject | null>(null);
 
   const handleReset = () => {
     setSearchTerm('');
@@ -59,6 +61,23 @@ const BiddingProjectList: React.FC<BiddingProjectListProps> = ({
       onDeleteProject(deletingProject.id);
       setShowDeleteModal(false);
       setDeletingProject(null);
+    }
+  };
+
+  const handleEditClick = (project: BiddingProject) => {
+    if (project.status === 'completed') {
+      setEditingProject(project);
+      setShowEditConfirmModal(true);
+    } else {
+      onViewProject(project);
+    }
+  };
+
+  const confirmEdit = () => {
+    if (editingProject) {
+      onViewProject(editingProject);
+      setShowEditConfirmModal(false);
+      setEditingProject(null);
     }
   };
 
@@ -237,40 +256,58 @@ const BiddingProjectList: React.FC<BiddingProjectListProps> = ({
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap text-sm">
                         <div className="flex items-center space-x-3">
-                          {(project.status === 'pending' || project.status === 'failed' || project.status === 'parsed') && (
-                            <button
-                              onClick={() => onViewProject(project)}
-                              className="px-2 py-1 text-xs text-primary-600 hover:text-primary-800 hover:bg-primary-50 rounded transition-colors flex items-center gap-1"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                              编辑
-                            </button>
+                          {project.status === 'failed' ? (
+                            <>
+                              <button
+                                onClick={() => onReparse(project)}
+                                className="px-2 py-1 text-xs text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded transition-colors flex items-center gap-1"
+                              >
+                                <RefreshCw className="w-3.5 h-3.5" />
+                                重试
+                              </button>
+                              <button
+                                onClick={() => handleDelete(project)}
+                                className="px-2 py-1 text-xs text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors flex items-center gap-1"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                删除
+                              </button>
+                            </>
+                          ) : project.status === 'parsing' ? (
+                            <>
+                              <button
+                                disabled
+                                className="px-2 py-1 text-xs text-neutral-400 cursor-not-allowed rounded flex items-center gap-1"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                                编辑
+                              </button>
+                              <button
+                                disabled
+                                className="px-2 py-1 text-xs text-neutral-400 cursor-not-allowed rounded flex items-center gap-1"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                删除
+                              </button>
+                            </>
+                          ) : (
+                            <>
+                              <button
+                                onClick={() => handleEditClick(project)}
+                                className="px-2 py-1 text-xs text-primary-600 hover:text-primary-800 hover:bg-primary-50 rounded transition-colors flex items-center gap-1"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                                编辑
+                              </button>
+                              <button
+                                onClick={() => handleDelete(project)}
+                                className="px-2 py-1 text-xs text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors flex items-center gap-1"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                删除
+                              </button>
+                            </>
                           )}
-                          {(project.status === 'parsing' || project.status === 'completed') && (
-                            <button
-                              onClick={() => onViewProject(project)}
-                              className="px-2 py-1 text-xs text-primary-600 hover:text-primary-800 hover:bg-primary-50 rounded transition-colors flex items-center gap-1"
-                            >
-                              <Eye className="w-3.5 h-3.5" />
-                              查看
-                            </button>
-                          )}
-                          {project.status === 'failed' && (
-                            <button
-                              onClick={() => onReparse(project)}
-                              className="px-2 py-1 text-xs text-orange-600 hover:text-orange-800 hover:bg-orange-50 rounded transition-colors flex items-center gap-1"
-                            >
-                              <RefreshCw className="w-3.5 h-3.5" />
-                              重新解析
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDelete(project)}
-                            className="px-2 py-1 text-xs text-red-600 hover:text-red-800 hover:bg-red-50 rounded transition-colors flex items-center gap-1"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                            删除
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -413,6 +450,40 @@ const BiddingProjectList: React.FC<BiddingProjectListProps> = ({
                 className="px-4 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
               >
                 删除
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditConfirmModal && editingProject && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div className="px-6 py-4 border-b border-neutral-200">
+              <h3 className="text-lg font-medium text-neutral-900">确认编辑</h3>
+            </div>
+
+            <div className="p-6">
+              <p className="text-neutral-600">
+                当前项目已经完成解析并核对完成，是否要继续修改？
+              </p>
+            </div>
+
+            <div className="px-6 py-4 bg-neutral-50 flex justify-end gap-2 rounded-b-lg">
+              <button
+                onClick={() => {
+                  setShowEditConfirmModal(false);
+                  setEditingProject(null);
+                }}
+                className="px-4 py-2 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-100 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmEdit}
+                className="px-4 py-2 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors"
+              >
+                继续修改
               </button>
             </div>
           </div>

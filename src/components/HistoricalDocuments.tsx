@@ -284,6 +284,12 @@ const HistoricalDocuments: React.FC<HistoricalDocumentsProps> = ({ companyId, re
               <h2 className="text-lg font-medium text-neutral-900">历史投标文件</h2>
             </div>
 
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-blue-700">
+                该模块用于存储企业历史优质的投标文件。这些历史文件可以作为参考模板，帮助快速生成新的投标文件，提高文件准备效率。请按项目分类上传，并添加详细说明。
+              </p>
+            </div>
+
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3">
                 文件名称
