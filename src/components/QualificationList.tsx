@@ -216,44 +216,14 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
                   onChange={(e) => setSearchCertNumber(e.target.value)}
                   className="w-40 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                 />
-                评级
-                <select
-                  value={searchRating}
-                  onChange={(e) => setSearchRating(e.target.value)}
-                  className="px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
-                >
-                  <option value="all">全部</option>
-                  <option value="无">无</option>
-                  <option value="特级">特级</option>
-                  <option value="一级">一级</option>
-                  <option value="二级">二级</option>
-                  <option value="三级">三级</option>
-                  <option value="四级">四级</option>
-                  <option value="五级">五级</option>
-                  <option value="甲级">甲级</option>
-                  <option value="乙级">乙级</option>
-                  <option value="丙级">丙级</option>
-                  <option value="AAA">AAA</option>
-                  <option value="AAAA">AAAA</option>
-                  <option value="AAAAA">AAAAA</option>
-                  <option value="CS1">CS1</option>
-                  <option value="CS2">CS2</option>
-                  <option value="CS3">CS3</option>
-                  <option value="CS4">CS4</option>
-                  <option value="CS5">CS5</option>
-                  <option value="一星级">一星级</option>
-                  <option value="二星级">二星级</option>
-                  <option value="三星级">三星级</option>
-                  <option value="四星级">四星级</option>
-                  <option value="五星级">五星级</option>
-                  <option value="六星级">六星级</option>
-                  <option value="七星级">七星级</option>
-                  <option value="八星级">八星级</option>
-                  <option value="九星级">九星级</option>
-                  <option value="十星级">十星级</option>
-                  <option value="十一星级">十一星级</option>
-                  <option value="十二星级">十二星级</option>
-                </select>
+                评级等级
+                <input
+                  type="text"
+                  placeholder="请输入评级等级"
+                  value={searchCertNumber}
+                  onChange={(e) => setSearchCertNumber(e.target.value)}
+                  className="w-40 px-3 py-1.5 text-sm border border-neutral-300 rounded focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                />
                 资质状态
                 <select
                   value={statusFilter}
@@ -813,42 +783,13 @@ const QualificationList: React.FC<QualificationListProps> = ({ companyId, readOn
                   <label className="block text-sm font-medium text-neutral-700 mb-1">
                     评级等级
                   </label>
-                  <select
+                  <input
+                    type="text"
                     value={editingItem.rating}
                     onChange={(e) => setEditingItem({ ...editingItem, rating: e.target.value })}
+                    placeholder="请输入认证机构"
                     className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    <option value="无">无</option>
-                    <option value="特级">特级</option>
-                    <option value="一级">一级</option>
-                    <option value="二级">二级</option>
-                    <option value="三级">三级</option>
-                    <option value="四级">四级</option>
-                    <option value="五级">五级</option>
-                    <option value="甲级">甲级</option>
-                    <option value="乙级">乙级</option>
-                    <option value="丙级">丙级</option>
-                    <option value="AAA">AAA</option>
-                    <option value="AAAA">AAAA</option>
-                    <option value="AAAAA">AAAAA</option>
-                    <option value="CS1">CS1</option>
-                    <option value="CS2">CS2</option>
-                    <option value="CS3">CS3</option>
-                    <option value="CS4">CS4</option>
-                    <option value="CS5">CS5</option>
-                    <option value="一星级">一星级</option>
-                    <option value="二星级">二星级</option>
-                    <option value="三星级">三星级</option>
-                    <option value="四星级">四星级</option>
-                    <option value="五星级">五星级</option>
-                    <option value="六星级">六星级</option>
-                    <option value="七星级">七星级</option>
-                    <option value="八星级">八星级</option>
-                    <option value="九星级">九星级</option>
-                    <option value="十星级">十星级</option>
-                    <option value="十一星级">十一星级</option>
-                    <option value="十二星级">十二星级</option>
-                  </select>
+                  />
                 </div>
                 <div className="col-span-2">
                   <label className="block text-sm font-medium text-neutral-700 mb-1">

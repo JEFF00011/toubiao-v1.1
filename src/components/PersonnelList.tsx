@@ -549,6 +549,15 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
                   />
                 </div>
                 <div>
+                  <label className="block text-xs text-neutral-600 mb-1">身份证失效日期 <span className="text-red-500">*</span></label>
+                  <input
+                    type="date"
+                    value={editingItem.validUntil}
+                    onChange={(e) => setEditingItem({ ...editingItem, validUntil: e.target.value })}
+                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">
                     联系电话 <span className="text-red-500">*</span>
                   </label>
