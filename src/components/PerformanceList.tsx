@@ -518,23 +518,14 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
   };
 
   const getTotalSteps = () => {
-    if (!editingItem) return 4;
-    return editingItem.contractType === 'total' ? 3 : 4;
+    return 4;
   };
 
   const getStepTitle = (step: number) => {
-    if (!editingItem) return '';
-    const totalSteps = getTotalSteps();
-
     if (step === 1) return '基础信息和联系人信息';
-    if (editingItem.contractType === 'total') {
-      if (step === 2) return '上传合同附件、验收证明';
-      if (step === 3) return '上传发票信息';
-    } else {
-      if (step === 2) return '录入合同产品信息';
-      if (step === 3) return '上传合同附件、验收证明';
-      if (step === 4) return '上传发票信息';
-    }
+    if (step === 2) return '录入合同产品信息';
+    if (step === 3) return '上传合同附件、验收证明';
+    if (step === 4) return '上传发票信息';
     return '';
   };
 
@@ -542,8 +533,14 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
     if (!editingItem) return false;
 
     if (currentStep === 1) {
-      return editingItem.contractNumber && editingItem.projectName && editingItem.clientName &&
-             editingItem.contractEffectiveDate && editingItem.projectAmount;
+      const baseFieldsValid = editingItem.contractNumber && editingItem.projectName &&
+                              editingItem.clientName && editingItem.contractEffectiveDate;
+
+      if (editingItem.contractType === 'total') {
+        return baseFieldsValid && !!editingItem.projectAmount;
+      } else {
+        return baseFieldsValid;
+      }
     }
 
     return true;
@@ -613,7 +610,7 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
     <div className="p-6 space-y-6">
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <p className="text-sm text-blue-800">
-          第一步：填写项目的基础信息和联系人信息。合同类型分为总价合同和单价合同，总价合同无需录入产品信息。
+          第一步：填写项目的基础信息和联系人信息。单价合同的项目金额为非必填项，可在第二步录入产品后自动计算。
         </p>
       </div>
 
@@ -682,7 +679,8 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
           </div>
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">
-              项目金额 <span className="text-red-500">*</span>
+              项目金额 {editingItem?.contractType === 'total' && <span className="text-red-500">*</span>}
+              {editingItem?.contractType === 'unit' && <span className="text-xs text-neutral-500">(选填，可在产品信息录入后自动计算)</span>}
             </label>
             <input
               type="text"
@@ -943,7 +941,7 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
     <div className="p-6 space-y-6">
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <p className="text-sm text-blue-800">
-          {editingItem?.contractType === 'total' ? '第二步' : '第三步'}：上传合同附件和验收证明。您可以选择上传完整合同或关键页。
+          第三步：上传合同附件和验收证明。您可以选择上传完整合同或关键页。
         </p>
       </div>
 
@@ -1174,7 +1172,7 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
     <div className="p-6 space-y-4">
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <p className="text-sm text-blue-800">
-          {editingItem?.contractType === 'total' ? '第三步' : '第四步'}：上传发票信息，包括发票编号、金额及发票文件。
+          第四步：上传发票信息，包括发票编号、金额及发票文件。
         </p>
       </div>
 
@@ -1340,11 +1338,9 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
     if (!editingItem) return null;
 
     if (currentStep === 1) return renderStep1();
-    if (editingItem.contractType === 'unit' && currentStep === 2) return renderStep2Products();
-    if ((editingItem.contractType === 'total' && currentStep === 2) ||
-        (editingItem.contractType === 'unit' && currentStep === 3)) return renderStepAttachments();
-    if ((editingItem.contractType === 'total' && currentStep === 3) ||
-        (editingItem.contractType === 'unit' && currentStep === 4)) return renderStepInvoices();
+    if (currentStep === 2) return renderStep2Products();
+    if (currentStep === 3) return renderStepAttachments();
+    if (currentStep === 4) return renderStepInvoices();
 
     return null;
   };
