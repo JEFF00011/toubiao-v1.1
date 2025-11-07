@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Edit, Trash2, Upload, AlertTriangle, Settings } from 'lucide-react';
+import { Plus, X, Edit, Trash2, Upload, AlertTriangle, Settings, ChevronRight, Check } from 'lucide-react';
 
 interface ProductAttachment {
   id: string;
@@ -86,6 +86,9 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
 
   const [showCategoryManagement, setShowCategoryManagement] = useState(false);
 
+  const [currentStep, setCurrentStep] = useState(1);
+  const [isEdit, setIsEdit] = useState(false);
+
   useEffect(() => {
     localStorage.setItem(`product_info_${companyId}`, JSON.stringify(data));
   }, [data, companyId]);
@@ -106,12 +109,38 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
       source: 'own',
       attachments: []
     });
+    setCurrentStep(1);
+    setIsEdit(false);
     setShowModal(true);
   };
 
   const handleEditProduct = (product: Product) => {
     setEditingProduct({ ...product });
+    setCurrentStep(1);
+    setIsEdit(true);
     setShowModal(true);
+  };
+
+  const canGoNextStep = () => {
+    if (!editingProduct) return false;
+
+    if (currentStep === 1) {
+      return editingProduct.name.trim() !== '' && editingProduct.categoryId !== '';
+    }
+
+    return true;
+  };
+
+  const handleNextStep = () => {
+    if (currentStep < 2 && canGoNextStep()) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePrevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
   };
 
   const handleSaveProduct = () => {
@@ -149,6 +178,226 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
 
     setShowModal(false);
     setEditingProduct(null);
+  };
+
+  const renderStepIndicator = () => {
+    const steps = [];
+    const stepTitles = ['基本信息', '上传附件'];
+
+    for (let i = 1; i <= 2; i++) {
+      steps.push(
+        <div key={i} className="flex items-center">
+          <div className="flex items-center">
+            <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 transition-colors ${
+              i < currentStep ? 'bg-green-500 border-green-500 text-white' :
+              i === currentStep ? 'bg-blue-600 border-blue-600 text-white' :
+              'bg-white border-neutral-300 text-neutral-500'
+            }`}>
+              {i < currentStep ? <Check className="w-4 h-4" /> : i}
+            </div>
+            <div className="ml-2">
+              <div className={`text-sm font-medium ${
+                i === currentStep ? 'text-blue-900' : 'text-neutral-600'
+              }`}>
+                {stepTitles[i - 1]}
+              </div>
+            </div>
+          </div>
+          {i < 2 && (
+            <ChevronRight className="w-5 h-5 mx-4 text-neutral-400" />
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-neutral-50 px-6 py-4 border-b border-neutral-200">
+        <div className="flex items-center justify-between">
+          {steps}
+        </div>
+      </div>
+    );
+  };
+
+  const renderStep1 = () => (
+    <div className="p-6 space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <p className="text-sm text-blue-800">
+          第一步：填写产品的基本信息。所有标记为必填的字段必须填写完整才能进入下一步。
+        </p>
+      </div>
+
+      <div className="border-b border-neutral-200 pb-4">
+        <h4 className="text-sm font-semibold text-neutral-900 mb-3">基本信息</h4>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              产品分类 <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={editingProduct?.categoryId || ''}
+              onChange={(e) => editingProduct && setEditingProduct({ ...editingProduct, categoryId: e.target.value })}
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="">请选择分类</option>
+              {categories[activeCategory]
+                .filter(cat => !cat.parentId)
+                .map(parentCat => {
+                  const subCategories = categories[activeCategory].filter(sub => sub.parentId === parentCat.id);
+                  return (
+                    <React.Fragment key={parentCat.id}>
+                      <option value={parentCat.id}>{parentCat.name}</option>
+                      {subCategories.map(subCat => (
+                        <option key={subCat.id} value={subCat.id}>
+                          └─ {subCat.name} (父级: {parentCat.name})
+                        </option>
+                      ))}
+                    </React.Fragment>
+                  );
+                })}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              产品名称 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={editingProduct?.name || ''}
+              onChange={(e) => editingProduct && setEditingProduct({ ...editingProduct, name: e.target.value })}
+              placeholder="请输入产品名称"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              产品品牌
+            </label>
+            <input
+              type="text"
+              value={editingProduct?.brand || ''}
+              onChange={(e) => editingProduct && setEditingProduct({ ...editingProduct, brand: e.target.value })}
+              placeholder="请输入产品品牌"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              产品型号
+            </label>
+            <input
+              type="text"
+              value={editingProduct?.model || ''}
+              onChange={(e) => editingProduct && setEditingProduct({ ...editingProduct, model: e.target.value })}
+              placeholder="请输入产品型号"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+          {activeCategory === 'companyProducts' && (
+            <div>
+              <label className="block text-sm font-medium text-neutral-700 mb-1">
+                产品来源 <span className="text-red-500">*</span>
+              </label>
+              <select
+                value={editingProduct?.source || 'own'}
+                onChange={(e) => editingProduct && setEditingProduct({ ...editingProduct, source: e.target.value as 'own' | 'agency' })}
+                className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="own">自有产品</option>
+                <option value="agency">代理产品</option>
+              </select>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-neutral-700 mb-1">
+            产品规格
+          </label>
+          <textarea
+            value={editingProduct?.description || ''}
+            onChange={(e) => editingProduct && setEditingProduct({ ...editingProduct, description: e.target.value })}
+            placeholder="请输入产品规格"
+            rows={4}
+            className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStep2 = () => (
+    <div className="p-6 space-y-4">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <p className="text-sm text-blue-800">
+          第二步：上传产品相关附件。可以添加产品图片、说明书、检测报告等附件文件。
+        </p>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-semibold text-neutral-900">相关附件</h4>
+          <button
+            onClick={handleAddAttachment}
+            className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors flex items-center"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            新增附件
+          </button>
+        </div>
+
+        {editingProduct?.attachments.length === 0 ? (
+          <div className="text-center py-8 text-neutral-500 bg-neutral-50 rounded-lg border border-neutral-200">
+            暂无附件
+          </div>
+        ) : (
+          <div className="overflow-x-auto border border-neutral-200 rounded-lg">
+            <table className="w-full">
+              <thead className="bg-neutral-50 border-b border-neutral-200">
+                <tr>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">序号</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">附件名称</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">附件描述</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">操作</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-neutral-200">
+                {editingProduct?.attachments.map((attachment, index) => (
+                  <tr key={attachment.id} className="hover:bg-neutral-50">
+                    <td className="px-4 py-3 text-sm text-neutral-900">{index + 1}</td>
+                    <td className="px-4 py-3 text-sm text-neutral-900">{attachment.name}</td>
+                    <td className="px-4 py-3 text-sm text-neutral-600">{attachment.description || '-'}</td>
+                    <td className="px-4 py-3 text-sm">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleEditAttachment(attachment)}
+                          className="text-primary-600 hover:text-primary-800"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteAttachment(attachment.id)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderModalContent = () => {
+    if (!editingProduct) return null;
+    if (currentStep === 1) return renderStep1();
+    if (currentStep === 2) return renderStep2();
+    return null;
   };
 
   const handleDeleteProduct = (productId: string) => {
@@ -829,10 +1078,10 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
 
       {showModal && editingProduct && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-white border-b border-neutral-200 px-6 py-4 flex items-center justify-between z-10">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] flex flex-col">
+            <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between flex-shrink-0">
               <h3 className="text-lg font-semibold text-neutral-900">
-                {editingProduct.id ? '编辑' : '添加'}{categoryNames[activeCategory]}
+                {isEdit ? '编辑' : '添加'}{categoryNames[activeCategory]}
               </h3>
               <button
                 onClick={() => {
@@ -845,178 +1094,56 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ companyId, readOnly = false }
               </button>
             </div>
 
-            <div className="p-6 space-y-6">
-              <div className="border-b border-neutral-200 pb-4">
-                <h4 className="text-sm font-semibold text-neutral-900 mb-3">基本信息</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">
-                      产品分类 <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={editingProduct.categoryId}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, categoryId: e.target.value })}
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    >
-                      <option value="">请选择分类</option>
-                      {categories[activeCategory]
-                        .filter(cat => !cat.parentId)
-                        .map(parentCat => {
-                          const subCategories = categories[activeCategory].filter(sub => sub.parentId === parentCat.id);
-                          return (
-                            <React.Fragment key={parentCat.id}>
-                              <option value={parentCat.id}>{parentCat.name}</option>
-                              {subCategories.map(subCat => (
-                                <option key={subCat.id} value={subCat.id}>
-                                  └─ {subCat.name} (父级: {parentCat.name})
-                                </option>
-                              ))}
-                            </React.Fragment>
-                          );
-                        })}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">
-                      产品名称 <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      value={editingProduct.name}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
-                      placeholder="请输入产品名称"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">
-                      产品品牌
-                    </label>
-                    <input
-                      type="text"
-                      value={editingProduct.brand}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, brand: e.target.value })}
-                      placeholder="请输入产品品牌"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-1">
-                      产品型号
-                    </label>
-                    <input
-                      type="text"
-                      value={editingProduct.model}
-                      onChange={(e) => setEditingProduct({ ...editingProduct, model: e.target.value })}
-                      placeholder="请输入产品型号"
-                      className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    />
-                  </div>
-                  {activeCategory === 'companyProducts' && (
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-1">
-                        产品来源 <span className="text-red-500">*</span>
-                      </label>
-                      <select
-                        value={editingProduct.source}
-                        onChange={(e) => setEditingProduct({ ...editingProduct, source: e.target.value as 'own' | 'agency' })}
-                        className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                      >
-                        <option value="own">自有产品</option>
-                        <option value="agency">代理产品</option>
-                      </select>
-                    </div>
-                  )}
-                </div>
+            {renderStepIndicator()}
 
-                <div className="mt-4">
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    产品规格
-                  </label>
-                  <textarea
-                    value={editingProduct.description}
-                    onChange={(e) => setEditingProduct({ ...editingProduct, description: e.target.value })}
-                    placeholder="请输入产品规格"
-                    rows={4}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-sm font-semibold text-neutral-900">相关附件</h4>
-                  <button
-                    onClick={handleAddAttachment}
-                    className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors flex items-center"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    新增附件
-                  </button>
-                </div>
-
-                {editingProduct.attachments.length === 0 ? (
-                  <div className="text-center py-8 text-neutral-500 bg-neutral-50 rounded-lg border border-neutral-200">
-                    暂无附件
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto border border-neutral-200 rounded-lg">
-                    <table className="w-full">
-                      <thead className="bg-neutral-50 border-b border-neutral-200">
-                        <tr>
-                          <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">序号</th>
-                          <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">附件名称</th>
-                          <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">附件描述</th>
-                          <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">操作</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-neutral-200">
-                        {editingProduct.attachments.map((attachment, index) => (
-                          <tr key={attachment.id} className="hover:bg-neutral-50">
-                            <td className="px-4 py-3 text-sm text-neutral-900">{index + 1}</td>
-                            <td className="px-4 py-3 text-sm text-neutral-900">{attachment.name}</td>
-                            <td className="px-4 py-3 text-sm text-neutral-600">{attachment.description || '-'}</td>
-                            <td className="px-4 py-3 text-sm">
-                              <div className="flex items-center space-x-2">
-                                <button
-                                  onClick={() => handleEditAttachment(attachment)}
-                                  className="text-primary-600 hover:text-primary-800"
-                                >
-                                  <Edit className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteAttachment(attachment.id)}
-                                  className="text-red-600 hover:text-red-800"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
+            <div className="flex-1 overflow-y-auto">
+              {renderModalContent()}
             </div>
 
-            <div className="sticky bottom-0 bg-neutral-50 px-6 py-4 border-t border-neutral-200 flex justify-end space-x-3">
+            <div className="px-6 py-4 border-t border-neutral-200 flex justify-between flex-shrink-0">
               <button
-                onClick={() => {
-                  setShowModal(false);
-                  setEditingProduct(null);
-                }}
-                className="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-100 transition-colors"
+                onClick={handlePrevStep}
+                disabled={currentStep === 1}
+                className={`px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg transition-colors ${
+                  currentStep === 1
+                    ? 'opacity-50 cursor-not-allowed'
+                    : 'hover:bg-neutral-50'
+                }`}
               >
-                取消
+                上一步
               </button>
-              <button
-                onClick={handleSaveProduct}
-                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-              >
-                保存
-              </button>
+
+              <div className="flex space-x-3">
+                <button
+                  onClick={() => {
+                    setShowModal(false);
+                    setEditingProduct(null);
+                  }}
+                  className="px-4 py-2 border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-100 transition-colors"
+                >
+                  取消
+                </button>
+                {currentStep < 2 ? (
+                  <button
+                    onClick={handleNextStep}
+                    disabled={!canGoNextStep()}
+                    className={`px-4 py-2 bg-primary-600 text-white rounded-lg transition-colors ${
+                      canGoNextStep()
+                        ? 'hover:bg-primary-700'
+                        : 'opacity-50 cursor-not-allowed'
+                    }`}
+                  >
+                    下一步
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleSaveProduct}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    完成
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>

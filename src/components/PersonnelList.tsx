@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Upload, FileText, Trash2, AlertTriangle, Edit } from 'lucide-react';
+import { Plus, X, Upload, FileText, Trash2, AlertTriangle, Edit, ChevronRight, Check } from 'lucide-react';
 
 interface Certificate {
   id: string;
@@ -7,7 +7,6 @@ interface Certificate {
   certNumber: string;
   issuingOrganization: string;
   issueDate: string;
-  validUntil: string;
   attachments: { url: string; name: string; size: number }[];
 }
 
@@ -26,6 +25,7 @@ interface PersonnelItem {
   name: string;
   gender: string;
   idNumber: string;
+  idValidUntil: string;
   isLegalPerson: boolean;
   isAuthorizedRepresentative: boolean;
   phone: string;
@@ -53,6 +53,7 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
       name: '张三',
       gender: '男',
       idNumber: '110101199001011234',
+      idValidUntil: '2030-01-01',
       isLegalPerson: true,
       isAuthorizedRepresentative: true,
       phone: '13800138000',
@@ -68,7 +69,6 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
           certNumber: '20150001234',
           issuingOrganization: '某某大学',
           issueDate: '2015-07-01',
-          validUntil: '',
           attachments: [{ url: '', name: '本科毕业证.pdf', size: 1024000 }]
         }
       ],
@@ -107,6 +107,8 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
   const [editingCertificate, setEditingCertificate] = useState<Certificate | null>(null);
   const [showQualificationModal, setShowQualificationModal] = useState(false);
   const [editingQualification, setEditingQualification] = useState<Qualification | null>(null);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [isEdit, setIsEdit] = useState(false);
 
   const MAX_FILE_SIZE = 50 * 1024 * 1024;
 
@@ -156,6 +158,7 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
       name: '',
       gender: '男',
       idNumber: '',
+      idValidUntil: '',
       isLegalPerson: false,
       isAuthorizedRepresentative: false,
       phone: '',
@@ -167,11 +170,15 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
       certificates: [],
       qualifications: []
     });
+    setCurrentStep(1);
+    setIsEdit(false);
     setShowAddModal(true);
   };
 
   const handleEdit = (item: PersonnelItem) => {
     setEditingItem({ ...item });
+    setCurrentStep(1);
+    setIsEdit(true);
     setShowEditModal(true);
   };
 
@@ -189,6 +196,7 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
       };
       setItems([...items, newItem]);
       setShowAddModal(false);
+      setCurrentStep(1);
     }
   };
 
@@ -198,6 +206,7 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
         item.id === editingItem.id ? editingItem : item
       ));
       setShowEditModal(false);
+      setCurrentStep(1);
     }
   };
 
@@ -224,10 +233,33 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
         reader.onload = (event) => {
           const url = event.target?.result as string;
           const newFile = { url, name: file.name, size: file.size };
+
           if (type === 'front') {
+            const isFirstUpload = !editingItem.idCardFront;
             setEditingItem({ ...editingItem, idCardFront: newFile });
+
+            if (isFirstUpload) {
+              setTimeout(() => {
+                setEditingItem(prev => prev ? {
+                  ...prev,
+                  name: '张明',
+                  gender: '男',
+                  idNumber: '110101199001011234'
+                } : prev);
+              }, 800);
+            }
           } else {
+            const isFirstUpload = !editingItem.idCardBack;
             setEditingItem({ ...editingItem, idCardBack: newFile });
+
+            if (isFirstUpload) {
+              setTimeout(() => {
+                setEditingItem(prev => prev ? {
+                  ...prev,
+                  idValidUntil: '2030-12-31'
+                } : prev);
+              }, 800);
+            }
           }
         };
         reader.readAsDataURL(file);
@@ -253,7 +285,6 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
       certNumber: '',
       issuingOrganization: '',
       issueDate: '',
-      validUntil: '',
       attachments: []
     });
     setShowCertificateModal(true);
@@ -488,7 +519,396 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
     }
   };
 
-  const renderFormModal = (isEdit: boolean) => {
+  const getTotalSteps = () => 3;
+
+  const getStepTitle = (step: number) => {
+    if (step === 1) return '基本信息';
+    if (step === 2) return '毕业证书';
+    if (step === 3) return '资质证书';
+    return '';
+  };
+
+  const canGoNextStep = () => {
+    if (!editingItem) return false;
+
+    if (currentStep === 1) {
+      return !!(
+        editingItem.name &&
+        editingItem.idNumber &&
+        editingItem.idValidUntil &&
+        editingItem.phone &&
+        editingItem.idCardFront &&
+        editingItem.idCardBack
+      );
+    }
+
+    return true;
+  };
+
+  const handleNextStep = () => {
+    const totalSteps = getTotalSteps();
+    if (currentStep < totalSteps && canGoNextStep()) {
+      setCurrentStep(currentStep + 1);
+    }
+  };
+
+  const handlePrevStep = () => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const handleFinish = () => {
+    if (isEdit) {
+      confirmEdit();
+    } else {
+      confirmAdd();
+    }
+  };
+
+  const renderStepIndicator = () => {
+    const totalSteps = getTotalSteps();
+    const steps = [];
+
+    for (let i = 1; i <= totalSteps; i++) {
+      steps.push(
+        <div key={i} className="flex items-center">
+          <div className="flex items-center">
+            <div className={`flex items-center justify-center w-8 h-8 rounded-full border-2 transition-colors ${
+              i < currentStep ? 'bg-green-500 border-green-500 text-white' :
+              i === currentStep ? 'bg-blue-600 border-blue-600 text-white' :
+              'bg-white border-neutral-300 text-neutral-500'
+            }`}>
+              {i < currentStep ? <Check className="w-4 h-4" /> : i}
+            </div>
+            <div className="ml-2">
+              <div className={`text-sm font-medium ${
+                i === currentStep ? 'text-blue-900' : 'text-neutral-600'
+              }`}>
+                {getStepTitle(i)}
+              </div>
+            </div>
+          </div>
+          {i < totalSteps && (
+            <ChevronRight className="w-5 h-5 mx-4 text-neutral-400" />
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-neutral-50 px-6 py-4 border-b border-neutral-200">
+        <div className="flex items-center justify-between">
+          {steps}
+        </div>
+      </div>
+    );
+  };
+
+  const renderStep1 = () => (
+    <div className="p-6 space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <p className="text-sm text-blue-800">
+          第一步：填写人员的基本信息和上传身份证件照片。上传身份证后系统将自动识别信息:
+        </p>
+      </div>
+
+      <div className="border-b border-neutral-200 pb-4">
+        <h4 className="text-sm font-semibold text-neutral-900 mb-3">基本信息</h4>
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              姓名 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={editingItem?.name || ''}
+              onChange={(e) => setEditingItem(editingItem ? { ...editingItem, name: e.target.value } : null)}
+              placeholder="请输入姓名"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              性别 <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={editingItem?.gender || '男'}
+              onChange={(e) => setEditingItem(editingItem ? { ...editingItem, gender: e.target.value } : null)}
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="男">男</option>
+              <option value="女">女</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              身份证号 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={editingItem?.idNumber || ''}
+              onChange={(e) => setEditingItem(editingItem ? { ...editingItem, idNumber: e.target.value } : null)}
+              placeholder="请输入身份证号"
+              maxLength={18}
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              身份证有效期 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="date"
+              value={editingItem?.idValidUntil || ''}
+              onChange={(e) => setEditingItem(editingItem ? { ...editingItem, idValidUntil: e.target.value } : null)}
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              联系电话 <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="tel"
+              value={editingItem?.phone || ''}
+              onChange={(e) => setEditingItem(editingItem ? { ...editingItem, phone: e.target.value } : null)}
+              placeholder="请输入联系电话"
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-1">
+              状态 <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={editingItem?.status || 'active'}
+              onChange={(e) => setEditingItem(editingItem ? { ...editingItem, status: e.target.value as any } : null)}
+              className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            >
+              <option value="active">可用</option>
+              <option value="resigned">不可用</option>
+            </select>
+          </div>
+          <div className="col-span-3 flex gap-6">
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={editingItem?.isLegalPerson || false}
+                onChange={(e) => setEditingItem(editingItem ? { ...editingItem, isLegalPerson: e.target.checked } : null)}
+                className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
+              />
+              <span className="text-sm font-medium text-neutral-700">是否法人</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h4 className="text-sm font-semibold text-neutral-900 mb-3">身份证件</h4>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              身份证人像面 <span className="text-red-500">*</span>
+            </label>
+            {!editingItem?.idCardFront ? (
+              <div
+                className="border-2 border-dashed border-neutral-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors cursor-pointer"
+                onClick={() => handleAddIdCard('front')}
+              >
+                <Upload className="w-6 h-6 mx-auto text-neutral-400 mb-1" />
+                <p className="text-xs text-neutral-600">点击上传</p>
+                <p className="text-xs text-neutral-500 mt-0.5">支持JPG、PNG、JPEG格式</p>
+              </div>
+            ) : (
+              <div className="relative">
+                <img
+                  src={editingItem.idCardFront.url}
+                  alt="身份证人像面"
+                  className="w-full h-48 object-cover rounded-lg border border-neutral-200"
+                />
+                <button
+                  onClick={() => handleRemoveIdCard('front')}
+                  className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full hover:bg-red-700 transition-colors shadow-lg"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <div className="mt-2 text-xs text-neutral-600 truncate">{editingItem.idCardFront.name}</div>
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-neutral-700 mb-2">
+              身份证国徽面 <span className="text-red-500">*</span>
+            </label>
+            {!editingItem?.idCardBack ? (
+              <div
+                className="border-2 border-dashed border-neutral-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors cursor-pointer"
+                onClick={() => handleAddIdCard('back')}
+              >
+                <Upload className="w-6 h-6 mx-auto text-neutral-400 mb-1" />
+                <p className="text-xs text-neutral-600">点击上传</p>
+                <p className="text-xs text-neutral-500 mt-0.5">支持JPG、PNG、JPEG格式</p>
+              </div>
+            ) : (
+              <div className="relative">
+                <img
+                  src={editingItem.idCardBack.url}
+                  alt="身份证国徽面"
+                  className="w-full h-48 object-cover rounded-lg border border-neutral-200"
+                />
+                <button
+                  onClick={() => handleRemoveIdCard('back')}
+                  className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full hover:bg-red-700 transition-colors shadow-lg"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <div className="mt-2 text-xs text-neutral-600 truncate">{editingItem.idCardBack.name}</div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStep2 = () => (
+    <div className="p-6 space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <p className="text-sm text-blue-800">
+          第二步：录入人员的毕业证书信息。如果暂无毕业证书,可以跳过此步骤直接进入下一步。
+        </p>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-semibold text-neutral-900">毕业证书</h4>
+          <button
+            onClick={handleAddCertificate}
+            className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors flex items-center"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            添加证书
+          </button>
+        </div>
+        {editingItem && editingItem.certificates.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full border border-neutral-200 rounded-lg">
+              <thead className="bg-neutral-50">
+                <tr>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">序号</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">证书名称</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">证书编号</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">颁发机构</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {editingItem.certificates.map((cert, index) => (
+                  <tr key={cert.id} className="hover:bg-neutral-50">
+                    <td className="px-4 py-2.5 text-sm text-neutral-900">{index + 1}</td>
+                    <td className="px-4 py-2.5 text-sm text-neutral-900">{cert.name}</td>
+                    <td className="px-4 py-2.5 text-sm text-neutral-900">{cert.certNumber}</td>
+                    <td className="px-4 py-2.5 text-sm text-neutral-900">{cert.issuingOrganization}</td>
+                    <td className="px-4 py-2.5 text-sm">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleEditCertificate(cert)}
+                          className="text-primary-600 hover:text-primary-800"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteCertificate(cert.id)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-neutral-500 border border-dashed border-neutral-300 rounded-lg">
+            暂无毕业证书
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderStep3 = () => (
+    <div className="p-6 space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <p className="text-sm text-blue-800">
+          第三步：录入人员的资质证书信息。如果暂无资质证书,可以直接完成添加。
+        </p>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="text-sm font-semibold text-neutral-900">资质证书</h4>
+          <button
+            onClick={handleAddQualification}
+            className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors flex items-center"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            添加资质
+          </button>
+        </div>
+        {editingItem && editingItem.qualifications.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full border border-neutral-200 rounded-lg">
+              <thead className="bg-neutral-50">
+                <tr>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">序号</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">证书名称</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">证书编号</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">颁发机构</th>
+                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {editingItem.qualifications.map((qual, index) => (
+                  <tr key={qual.id} className="hover:bg-neutral-50">
+                    <td className="px-4 py-2.5 text-sm text-neutral-900">{index + 1}</td>
+                    <td className="px-4 py-2.5 text-sm text-neutral-900">{qual.name}</td>
+                    <td className="px-4 py-2.5 text-sm text-neutral-900">{qual.certNumber}</td>
+                    <td className="px-4 py-2.5 text-sm text-neutral-900">{qual.issuingOrganization}</td>
+                    <td className="px-4 py-2.5 text-sm">
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => handleEditQualification(qual)}
+                          className="text-primary-600 hover:text-primary-800"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteQualification(qual.id)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-neutral-500 border border-dashed border-neutral-300 rounded-lg">
+            暂无资质证书
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
+  const renderFormModal = (isEditMode: boolean) => {
     if (!editingItem) return null;
 
     return (
@@ -496,302 +916,69 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
         <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
           <div className="px-6 py-4 border-b border-neutral-200 flex items-center justify-between sticky top-0 bg-white z-10">
             <h3 className="text-lg font-medium text-neutral-900">
-              {isEdit ? '编辑人员信息' : '新增人员信息'}
+              {isEditMode ? '编辑人员信息' : '新增人员信息'}
             </h3>
             <button
-              onClick={() => isEdit ? setShowEditModal(false) : setShowAddModal(false)}
+              onClick={() => {
+                isEditMode ? setShowEditModal(false) : setShowAddModal(false);
+                setCurrentStep(1);
+              }}
               className="text-neutral-400 hover:text-neutral-600 transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="p-6 space-y-6">
-            <div className="border-b border-neutral-200 pb-4">
-              <h4 className="text-sm font-semibold text-neutral-900 mb-3">基本信息</h4>
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    姓名 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={editingItem.name}
-                    onChange={(e) => setEditingItem({ ...editingItem, name: e.target.value })}
-                    placeholder="请输入姓名"
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    性别 <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={editingItem.gender}
-                    onChange={(e) => setEditingItem({ ...editingItem, gender: e.target.value })}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    <option value="男">男</option>
-                    <option value="女">女</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    身份证号 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    value={editingItem.idNumber}
-                    onChange={(e) => setEditingItem({ ...editingItem, idNumber: e.target.value })}
-                    placeholder="请输入身份证号"
-                    maxLength={18}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-neutral-600 mb-1">身份证失效日期 <span className="text-red-500">*</span></label>
-                  <input
-                    type="date"
-                    value={editingItem.validUntil}
-                    onChange={(e) => setEditingItem({ ...editingItem, validUntil: e.target.value })}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    联系电话 <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    value={editingItem.phone}
-                    onChange={(e) => setEditingItem({ ...editingItem, phone: e.target.value })}
-                    placeholder="请输入联系电话"
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    状态 <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={editingItem.status}
-                    onChange={(e) => setEditingItem({ ...editingItem, status: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  >
-                    <option value="active">可用</option>
-                    <option value="resigned">不可用</option>
-                  </select>
-                </div>
-                <div className="col-span-3 flex gap-6">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={editingItem.isLegalPerson}
-                      onChange={(e) => setEditingItem({ ...editingItem, isLegalPerson: e.target.checked })}
-                      className="w-4 h-4 text-primary-600 border-neutral-300 rounded focus:ring-primary-500"
-                    />
-                    <span className="text-sm font-medium text-neutral-700">是否法人</span>
-                  </label>
-                </div>
-              </div>
-            </div>
+          {renderStepIndicator()}
 
-            <div className="border-b border-neutral-200 pb-4">
-              <h4 className="text-sm font-semibold text-neutral-900 mb-3">身份证件</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    身份证人像面 <span className="text-red-500">*</span>
-                  </label>
-                  {!editingItem.idCardFront ? (
-                    <div
-                      className="border-2 border-dashed border-neutral-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors cursor-pointer"
-                      onClick={() => handleAddIdCard('front')}
-                    >
-                      <Upload className="w-6 h-6 mx-auto text-neutral-400 mb-1" />
-                      <p className="text-xs text-neutral-600">点击上传</p>
-                      <p className="text-xs text-neutral-500 mt-0.5">支持JPG、PNG、JPEG格式</p>
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      <img
-                        src={editingItem.idCardFront.url}
-                        alt="身份证人像面"
-                        className="w-full h-48 object-cover rounded-lg border border-neutral-200"
-                      />
-                      <button
-                        onClick={() => handleRemoveIdCard('front')}
-                        className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full hover:bg-red-700 transition-colors shadow-lg"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      <div className="mt-2 text-xs text-neutral-600 truncate">{editingItem.idCardFront.name}</div>
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-neutral-700 mb-2">
-                    身份证国徽面 <span className="text-red-500">*</span>
-                  </label>
-                  {!editingItem.idCardBack ? (
-                    <div
-                      className="border-2 border-dashed border-neutral-300 rounded-lg p-4 text-center hover:border-primary-500 transition-colors cursor-pointer"
-                      onClick={() => handleAddIdCard('back')}
-                    >
-                      <Upload className="w-6 h-6 mx-auto text-neutral-400 mb-1" />
-                      <p className="text-xs text-neutral-600">点击上传</p>
-                      <p className="text-xs text-neutral-500 mt-0.5">支持JPG、PNG、JPEG格式</p>
-                    </div>
-                  ) : (
-                    <div className="relative">
-                      <img
-                        src={editingItem.idCardBack.url}
-                        alt="身份证国徽面"
-                        className="w-full h-48 object-cover rounded-lg border border-neutral-200"
-                      />
-                      <button
-                        onClick={() => handleRemoveIdCard('back')}
-                        className="absolute top-2 right-2 bg-red-600 text-white p-1.5 rounded-full hover:bg-red-700 transition-colors shadow-lg"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                      <div className="mt-2 text-xs text-neutral-600 truncate">{editingItem.idCardBack.name}</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="border-b border-neutral-200 pb-4">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-semibold text-neutral-900">毕业证书</h4>
-                <button
-                  onClick={handleAddCertificate}
-                  className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors flex items-center"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  添加证书
-                </button>
-              </div>
-              {editingItem.certificates.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full border border-neutral-200 rounded-lg">
-                    <thead className="bg-neutral-50">
-                      <tr>
-                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">序号</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">证书名称</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">证书编号</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">颁发机构</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">操作</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {editingItem.certificates.map((cert, index) => (
-                        <tr key={cert.id} className="hover:bg-neutral-50">
-                          <td className="px-4 py-2.5 text-sm text-neutral-900">{index + 1}</td>
-                          <td className="px-4 py-2.5 text-sm text-neutral-900">{cert.name}</td>
-                          <td className="px-4 py-2.5 text-sm text-neutral-900">{cert.certNumber}</td>
-                          <td className="px-4 py-2.5 text-sm text-neutral-900">{cert.issuingOrganization}</td>
-                          <td className="px-4 py-2.5 text-sm">
-                            <div className="flex items-center space-x-2">
-                              <button
-                                onClick={() => handleEditCertificate(cert)}
-                                className="text-primary-600 hover:text-primary-800"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteCertificate(cert.id)}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-neutral-500 border border-dashed border-neutral-300 rounded-lg">
-                  暂无毕业证书
-                </div>
-              )}
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-semibold text-neutral-900">资质证书</h4>
-                <button
-                  onClick={handleAddQualification}
-                  className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors flex items-center"
-                >
-                  <Plus className="w-4 h-4 mr-1" />
-                  添加资质
-                </button>
-              </div>
-              {editingItem.qualifications.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full border border-neutral-200 rounded-lg">
-                    <thead className="bg-neutral-50">
-                      <tr>
-                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">序号</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">证书名称</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">证书编号</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">颁发机构</th>
-                        <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600 border-b">操作</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {editingItem.qualifications.map((qual, index) => (
-                        <tr key={qual.id} className="hover:bg-neutral-50">
-                          <td className="px-4 py-2.5 text-sm text-neutral-900">{index + 1}</td>
-                          <td className="px-4 py-2.5 text-sm text-neutral-900">{qual.name}</td>
-                          <td className="px-4 py-2.5 text-sm text-neutral-900">{qual.certNumber}</td>
-                          <td className="px-4 py-2.5 text-sm text-neutral-900">{qual.issuingOrganization}</td>
-                          <td className="px-4 py-2.5 text-sm">
-                            <div className="flex items-center space-x-2">
-                              <button
-                                onClick={() => handleEditQualification(qual)}
-                                className="text-primary-600 hover:text-primary-800"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteQualification(qual.id)}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-neutral-500 border border-dashed border-neutral-300 rounded-lg">
-                  暂无资质证书
-                </div>
-              )}
-            </div>
+          <div className="overflow-y-auto" style={{ maxHeight: 'calc(90vh - 200px)' }}>
+            {currentStep === 1 && renderStep1()}
+            {currentStep === 2 && renderStep2()}
+            {currentStep === 3 && renderStep3()}
           </div>
 
-          <div className="px-6 py-4 bg-neutral-50 flex justify-end gap-2 rounded-b-lg sticky bottom-0">
-            <button
-              onClick={() => isEdit ? setShowEditModal(false) : setShowAddModal(false)}
-              className="px-4 py-2 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-100 transition-colors"
-            >
-              取消
-            </button>
-            <button
-              onClick={isEdit ? confirmEdit : confirmAdd}
-              className="px-4 py-2 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors"
-            >
-              {isEdit ? '保存' : '确定'}
-            </button>
+          <div className="px-6 py-4 bg-neutral-50 flex justify-between gap-2 rounded-b-lg sticky bottom-0 border-t border-neutral-200">
+            <div>
+              {currentStep > 1 && (
+                <button
+                  onClick={handlePrevStep}
+                  className="px-4 py-2 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-100 transition-colors"
+                >
+                  上一步
+                </button>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => {
+                  isEditMode ? setShowEditModal(false) : setShowAddModal(false);
+                  setCurrentStep(1);
+                }}
+                className="px-4 py-2 text-sm border border-neutral-300 text-neutral-700 rounded hover:bg-neutral-100 transition-colors"
+              >
+                取消
+              </button>
+              {currentStep < getTotalSteps() ? (
+                <button
+                  onClick={handleNextStep}
+                  disabled={!canGoNextStep()}
+                  className={`px-4 py-2 text-sm rounded transition-colors ${
+                    canGoNextStep()
+                      ? 'bg-primary-600 text-white hover:bg-primary-700'
+                      : 'bg-neutral-300 text-neutral-500 cursor-not-allowed'
+                  }`}
+                >
+                  下一步
+                </button>
+              ) : (
+                <button
+                  onClick={handleFinish}
+                  className="px-4 py-2 text-sm bg-primary-600 text-white rounded hover:bg-primary-700 transition-colors"
+                >
+                  完成
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -1093,17 +1280,6 @@ const PersonnelList: React.FC<PersonnelListProps> = ({ companyId, readOnly = fal
                     type="date"
                     value={editingCertificate.issueDate}
                     onChange={(e) => handleUpdateCertificateField('issueDate', e.target.value)}
-                    className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    有效期至（永久有效可留空）
-                  </label>
-                  <input
-                    type="date"
-                    value={editingCertificate.validUntil}
-                    onChange={(e) => handleUpdateCertificateField('validUntil', e.target.value)}
                     className="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>

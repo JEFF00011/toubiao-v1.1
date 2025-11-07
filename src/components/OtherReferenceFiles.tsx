@@ -340,7 +340,6 @@ const OtherReferenceFiles: React.FC<OtherReferenceFilesProps> = ({ companyId, re
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">文件名称</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">文件类型</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">文件描述</th>
-                  <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">附件数量</th>
                   <th className="px-4 py-2.5 text-left text-xs font-medium text-neutral-600">操作</th>
                 </tr>
               </thead>
@@ -369,9 +368,6 @@ const OtherReferenceFiles: React.FC<OtherReferenceFilesProps> = ({ companyId, re
                         <div className="max-w-xs truncate" title={item.fileDescription}>
                           {item.fileDescription || '-'}
                         </div>
-                      </td>
-                      <td className="px-4 py-2.5 whitespace-nowrap text-sm text-neutral-900">
-                        {item.attachments.length} 个文件
                       </td>
                       <td className="px-4 py-2.5 whitespace-nowrap text-sm">
                         {!readOnly && (

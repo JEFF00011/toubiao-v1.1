@@ -680,7 +680,7 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
           <div>
             <label className="block text-sm font-medium text-neutral-700 mb-1">
               项目金额 {editingItem?.contractType === 'total' && <span className="text-red-500">*</span>}
-              {editingItem?.contractType === 'unit' && <span className="text-xs text-neutral-500">(选填，可在产品信息录入后自动计算)</span>}
+              {editingItem?.contractType === 'unit' && <span className="text-xs text-neutral-500"></span>}
             </label>
             <input
               type="text"
@@ -1714,7 +1714,7 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    数量 <span className="text-red-500">*</span>
+                    数量
                   </label>
                   <input
                     type="text"
@@ -1737,7 +1737,7 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    单价 <span className="text-red-500">*</span>
+                    单价
                   </label>
                   <input
                     type="text"
@@ -1760,7 +1760,7 @@ const PerformanceList: React.FC<PerformanceListProps> = ({ companyId, readOnly =
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-neutral-700 mb-1">
-                    总价 <span className="text-red-500">*</span>
+                    总价
                     <span className="text-xs text-neutral-500 ml-2">(自动计算)</span>
                   </label>
                   <input
