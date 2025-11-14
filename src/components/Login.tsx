@@ -71,7 +71,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <div className="hidden lg:flex flex-col justify-center space-y-6 text-white">
           <div className="space-y-4">
             <h1 className="text-4xl font-bold text-neutral-800">
-              AI投标助手V1.0
+              投标助手智能体软件V1.0
             </h1>
             <p className="text-lg text-neutral-600 leading-relaxed">
               通过智能化手段提升投标文件编制效率和质量，

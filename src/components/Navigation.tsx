@@ -108,8 +108,8 @@ const Navigation: React.FC<NavigationProps> = ({ username = '管理员', role = 
               <FileText className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-neutral-900">AI投标助手 v1.0</h1>
-              <p className="text-xs text-neutral-500">智能标书生成系统</p>
+              <h1 className="text-lg font-semibold text-neutral-900">投标助手智能体软件</h1>
+              <p className="text-xs text-neutral-500">v1.0</p>
             </div>
           </div>
 
